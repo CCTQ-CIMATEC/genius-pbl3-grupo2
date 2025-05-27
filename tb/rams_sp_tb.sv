@@ -16,16 +16,6 @@ module top_rams_tb;
     logic [31:0] ex_reg_read_data2;        // simula entrada de dados vindo do memory acess
     logic [31:0] ma_read_data;             // simula saída de dados após processamento do memory access
 
-    // Instância do DUT
-    /*top_rams uut (
-        .clk(clk),
-        .we(we),
-        .rd(rd),
-        .en(en),
-        .addr(addr),
-        .di(di),
-        .dout(dout)
-    );*/
 
     bytes_slicer uut (
         .clk(clk),
