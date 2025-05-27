@@ -19,30 +19,33 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module rams_sp_wf (i_ram_clk, i_ram_we, i_ram_rd, i_ram_en, i_ram_addr, i_ram_di, o_ram_dout);
+module rams_sp_wf (clk, we, rd, en, addr, di, dout);
 
-    input         i_ram_clk;
-    input         i_ram_we;
-    input         i_ram_rd;
-    input         i_ram_en;
-    input  [9:0]  i_ram_addr;
-    input  [31:0] i_ram_di;
-    output reg [31:0] o_ram_dout;   
-
+    input         clk;
+    input         we;
+    input         rd;
+    input         en;
+    input   [9:0] addr;
+    input  [31:0] di;
+    output [31:0] dout;
     reg    [31:0] RAM [1023:0];
+    reg    [31:0] dout;
 
-    always @(posedge i_ram_clk) begin
-        if (i_ram_en) begin
-            // Rotina para escrita
-            if (i_ram_we && !i_ram_rd) begin
-                RAM[i_ram_addr] <= i_ram_di;
-                o_ram_dout <= i_ram_di;
-            end
-            // Rotina para leitura
-            else if(!i_ram_we && i_ram_rd) begin
-                o_ram_dout <= RAM[i_ram_addr];
-            end
+always @(posedge clk)
+
+  begin
+    if (en)begin
+        
+    if (we)
+        begin
+            RAM[addr] <= di;
+            dout <= di;
+        end
+
+    else if(rd)
+        begin
+            dout <= RAM[addr];
         end
     end
-
+  end
 endmodule
