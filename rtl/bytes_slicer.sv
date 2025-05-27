@@ -32,19 +32,14 @@ always @(posedge clk) begin
 
             if (we && !rd) begin
                 
-                if (en[0]) RAM[addr][7:0]    <=   di[7:0]; //dout <= RAM[addr][7:0];    // SRAM0
-                if (en[1]) RAM[addr][15:8]   <=  di[15:8]; //dout <= RAM[addr][15:8];   // SRAM1
-                if (en[2]) RAM[addr][23:16]  <= di[23:16]; //dout <= RAM[addr][23:16];  // SRAM2
-                if (en[3]) RAM[addr][31:24]  <= di[31:24]; //dout <= RAM[addr][31:24];  // SRAM3
+                if (en[0]) RAM[addr][7:0]    <=   di[7:0];    // SRAM0
+                if (en[1]) RAM[addr][15:8]   <=  di[15:8];    // SRAM1
+                if (en[2]) RAM[addr][23:16]  <= di[23:16];    // SRAM2
+                if (en[3]) RAM[addr][31:24]  <= di[31:24];    // SRAM3
 
             end
             else if (!we && rd) begin
                 
-                /*if (en[0]) dout <= RAM[addr][7:0];
-                if (en[1]) dout <= RAM[addr][15:8];
-                if (en[2]) dout <= RAM[addr][23:16];
-                if (en[3]) dout <= RAM[addr][31:24];*/
-
                 dout <= { (en[3] ? RAM[addr][31:24] : 8'h00),
                           (en[2] ? RAM[addr][23:16] : 8'h00),
                           (en[1] ? RAM[addr][15:8]  : 8'h00),
