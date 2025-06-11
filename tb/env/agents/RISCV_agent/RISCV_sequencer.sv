@@ -1,18 +1,18 @@
 //------------------------------------------------------------------------------
-// Sequencer module for adder agent
+// Sequencer module for RISCV agent
 //------------------------------------------------------------------------------
-// This module defines the sequencer for the adder agent.
+// This module defines the sequencer for the RISCV agent.
 //
-// Author: Nelson Alves nelsonafn@gmail.com
-// Date  : October 2023
+// Author: Gustavo Santiago
+// Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef ADDER_SEQUENCER
-`define ADDER_SEQUENCER
+`ifndef RISCV_SEQUENCER
+`define RISCV_SEQUENCER
 
-class adder_sequencer extends uvm_sequencer#(adder_transaction);
+class RISCV_sequencer extends uvm_sequencer#(RISCV_transaction);
  
-  `uvm_component_utils(adder_sequencer)
+  `uvm_component_utils(RISCV_sequencer)
  
   /*
    * Constructor
@@ -24,7 +24,3 @@ class adder_sequencer extends uvm_sequencer#(adder_transaction);
 endclass
 
 `endif
-
-
-
-

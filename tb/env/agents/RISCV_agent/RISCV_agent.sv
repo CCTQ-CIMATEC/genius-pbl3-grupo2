@@ -1,28 +1,28 @@
 //------------------------------------------------------------------------------
-// UVM agent for adder transactions
+// UVM agent for RISCV transactions
 //------------------------------------------------------------------------------
-// This agent handles the driver, monitor, and sequencer for adder transactions.
+// This agent handles the driver, monitor, and sequencer for RISCV transactions.
 //
-// Author: Nelson Alves nelsonafn@gmail.com
-// Date  : October 2023
+// Author: Gustavo Santiago
+// Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef ADDER_AGENT 
-`define ADDER_AGENT
+`ifndef RISCV_AGENT 
+`define RISCV_AGENT
 
-class adder_agent extends uvm_agent;
+class RISCV_agent extends uvm_agent;
 
   /*
    * Declaration of UVC components such as driver, monitor, sequencer, etc.
    */
-  adder_driver    driver;
-  adder_sequencer sequencer;
-  adder_monitor   monitor;
+  RISCV_driver    driver;
+  RISCV_sequencer sequencer;
+  RISCV_monitor   monitor;
 
   /*
    * Declaration of component utils 
    */
-  `uvm_component_utils(adder_agent)
+  `uvm_component_utils(RISCV_agent)
 
   /*
    * Constructor
@@ -36,9 +36,9 @@ class adder_agent extends uvm_agent;
    */
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    driver = adder_driver::type_id::create("driver", this);
-    sequencer = adder_sequencer::type_id::create("sequencer", this);
-    monitor = adder_monitor::type_id::create("monitor", this);
+    driver = RISCV_driver::type_id::create("driver", this);
+    sequencer = RISCV_sequencer::type_id::create("sequencer", this);
+    monitor = RISCV_monitor::type_id::create("monitor", this);
   endfunction : build_phase
 
   /*
@@ -48,6 +48,6 @@ class adder_agent extends uvm_agent;
     driver.seq_item_port.connect(sequencer.seq_item_export);
   endfunction : connect_phase
  
-endclass : adder_agent
+endclass : RISCV_agent
 
 `endif

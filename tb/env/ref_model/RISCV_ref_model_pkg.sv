@@ -1,16 +1,16 @@
 //------------------------------------------------------------------------------
-// Package for adder reference model components
+// Package for RISCV reference model components
 //------------------------------------------------------------------------------
-// This package includes the reference model components for the adder verification.
+// This package includes the reference model components for the RISCV verification.
 //
-// Author: Nelson Alves nelsonafn@gmail.com
-// Date  : October 2023
+// Author: Gustavo Santiago
+// Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef ADDER_REF_MODEL_PKG
-`define ADDER_REF_MODEL_PKG
+`ifndef RISCV_REF_MODEL_PKG
+`define RISCV_REF_MODEL_PKG
 
-package adder_ref_model_pkg;
+package RISCV_ref_model_pkg;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -18,12 +18,12 @@ package adder_ref_model_pkg;
   /*
    * Importing packages: agent, ref model, register, etc.
    */
-  import adder_agent_pkg::*;
+  import RISCV_agent_pkg::*;
 
   /*
    * Include ref model files 
    */
-  `include "adder_ref_model.sv"
+  `include "RISCV_ref_model.sv"
 
 endpackage
 
