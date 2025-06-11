@@ -1,4 +1,3 @@
 rtl/utils/mux2to1.sv
-rtl/mux4to1.sv
 rtl/write_back.sv
 tb/write_back_tb.sv
