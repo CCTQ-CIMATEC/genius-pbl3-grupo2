@@ -45,8 +45,9 @@ import RISCV_test_list::*;
   * Generates a reset signal that is asserted for a few clock cycles.
   */
  initial begin
-   reset = 1;
-   #(cycle*5) reset = 0;
+    reset <= 0;   // Assert reset
+    #10;          // Hold reset for 10ns (5 clock cycles)
+    reset <= 1;   // Release reset
  end
  
  /*

@@ -13,7 +13,7 @@
 class RISCV_transaction extends uvm_sequence_item;
 
   // Input parameters (instruction and memory interface signals)
-  rand bit [`P_DATA_WIDTH-1:0] instr_data;
+  bit [`P_DATA_WIDTH-1:0] instr_data;
   rand bit [`P_DATA_WIDTH-1:0] data_rd;
 
   // Expected output signals from the CPU (used by monitor or scoreboard)
