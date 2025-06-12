@@ -31,44 +31,52 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
 
   virtual task run_phase(uvm_phase phase);
     reset();
+    wait(!vif.reset);
+    
     forever begin
+      // Get the next transaction from sequencer
       seq_item_port.get_next_item(req);
+      
+      // Drive the transaction
       drive();
-      `uvm_info(get_full_name(), $sformatf("Driving instruction: %s", req.instr_name), UVM_LOW);
+      
+      `uvm_info(get_full_name(), $sformatf("Drove instruction: %s", req.instr_name), UVM_LOW);
       req.print();
-      @(vif.dr_cb); // Wait one clock for handshake
+      
+      // Create response and send to analysis port
       $cast(rsp, req.clone());
       rsp.set_id_info(req);
       drv2rm_port.write(rsp);
+      
+      // Signal completion to sequencer
       seq_item_port.item_done();
-      seq_item_port.put(rsp);
     end
   endtask
 
   /*
    * Task: drive
-   * Drives instruction and memory request signals to the DUT.
-   * This version supports instruction fetch and store operations.
+   * Drives a single instruction to the DUT.
    */
   task drive();
-    wait(!vif.reset);
+    // Wait for clock edge and ensure not in reset
     @(vif.dr_cb);
-
-    // Drive instruction bus
-    vif.dr_cb.instr_data  <= req.instr_data;
-
-    // Memory signals (optional for future enhancements)
-    vif.dr_cb.data_rd     <= req.data_rd;
+    
+    // Drive instruction to DUT
+    vif.dr_cb.instr_data <= req.instr_data;
+    vif.dr_cb.data_rd    <= req.data_rd;
+    
+    `uvm_info(get_full_name(), $sformatf("Driving instr_data: 0x%08h", req.instr_data), UVM_HIGH);
   endtask
 
   /*
    * Task: reset
-   * Resets the DUT inputs.
+   * Resets the DUT inputs to known state.
    */
   task reset();
     @(vif.dr_cb);
-    vif.dr_cb.instr_data  <= 32'd0;
-    vif.dr_cb.data_rd     <= 32'd0;
+    vif.dr_cb.instr_data <= 32'd0;
+    vif.dr_cb.data_rd    <= 32'd0;
+    `uvm_info(get_full_name(), "Driver reset completed", UVM_MEDIUM);
   endtask
 
 endclass

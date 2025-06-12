@@ -71,8 +71,8 @@ import RISCV_test_list::*;
        .P_IMEM_ADDR_WIDTH(P_IMEM_ADDR_WIDTH),
        .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
    ) u_riscv_core (
-       .i_clk          (i_clk),
-       .i_rst_n        (i_rst_n),
+       .i_clk          (clk),
+       .i_rst_n        (reset),
        // Instruction Memory Interface
        .o_imem_addr    (RISCV_intf.inst_addr),
        .i_imem_rdata   (RISCV_intf.instr_data),

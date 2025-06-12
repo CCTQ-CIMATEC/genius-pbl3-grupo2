@@ -27,26 +27,27 @@ class RISCV_store_seq extends uvm_sequence#(RISCV_transaction);
   localparam bit [6:0] STORE_OPCODE = 7'b0100011;
   localparam bit [2:0] funct3 = 3'b010;
 
-
   virtual task body();
-    for (int i = 0; i < `NO_OF_TRANSACTIONS; i++) begin
+    // Generate multiple store transactions
+    repeat(`NO_OF_TRANSACTIONS) begin
       req = RISCV_transaction::type_id::create("req");
       start_item(req);
 
+      // Randomize the fields
       if (!randomize(rs1, rs2, imm)) 
         `uvm_fatal(get_type_name(), "Randomization failed!");
 
-      imm[1:0] = 2'b00;
+      imm[1:0] = 2'b00; // Align to word boundary for SW instruction
 
       // Build the store instruction (S-type encoding)
       req.instr_data = {
         imm[11:5], rs2, rs1, funct3, imm[4:0], STORE_OPCODE
       };
-      req.instr_name = $sformatf("SW x%0d, %0d(x%0d)", rs2, imm, rs1);
+      req.instr_name = $sformatf("SW x%0d, %0d(x%0d)", rs2, $signed(imm), rs1);
 
-      `uvm_info(get_full_name(), $sformatf("Sending STORE instruction: %s", req.instr_name), UVM_LOW);
+      `uvm_info(get_full_name(), $sformatf("Generated STORE instruction: %s", req.instr_name), UVM_LOW);
+      
       finish_item(req);
-      get_response(rsp);
     end
   endtask
    

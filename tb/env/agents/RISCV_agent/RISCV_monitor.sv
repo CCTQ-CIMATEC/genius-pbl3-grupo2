@@ -29,6 +29,9 @@ class RISCV_monitor extends uvm_monitor;
   endfunction : build_phase
 
   virtual task run_phase(uvm_phase phase);
+    // Aguarda sair do reset uma vez
+    wait(!vif.reset);
+    
     forever begin
       collect_trans();
     end
@@ -37,23 +40,27 @@ class RISCV_monitor extends uvm_monitor;
   task collect_trans();
     RISCV_transaction act_trans;
 
-    wait(!vif.reset);  // Espera sair do reset
+    // Aguarda uma borda de clock antes de capturar
+    @(posedge vif.clk);
+    
+    // Só captura se não estiver em reset
+    if (vif.reset) begin
+      act_trans = RISCV_transaction::type_id::create("act_trans", this);
 
-    act_trans = RISCV_transaction::type_id::create("act_trans", this);
+      // Inputs
+      act_trans.instr_data    = vif.instr_data;
+      act_trans.data_rd       = vif.data_rd;
 
-    // Inputs
-    act_trans.instr_data    = vif.instr_data;
-    act_trans.data_rd       = vif.data_rd;
+      // Outputs esperados
+      act_trans.inst_addr      = vif.inst_addr;
+      act_trans.data_wr        = vif.data_wr;
+      act_trans.data_addr      = vif.data_addr;
+      act_trans.data_wr_en_ma  = vif.data_wr_en_ma;
 
-    // Outputs esperados
-    act_trans.inst_addr      = vif.inst_addr;
-    act_trans.data_wr        = vif.data_wr;
-    act_trans.data_addr      = vif.data_addr;
-    act_trans.data_wr_en_ma  = vif.data_wr_en_ma;
+      `uvm_info(get_full_name(), $sformatf("Monitor captured transaction:\n%s", act_trans.sprint()), UVM_LOW);
 
-    `uvm_info(get_full_name(), $sformatf("Monitor captured transaction:\n%s", act_trans.sprint()), UVM_LOW);
-
-    mon2sb_port.write(act_trans);
+      mon2sb_port.write(act_trans);
+    end
   endtask : collect_trans
 
 endclass : RISCV_monitor
