@@ -48,7 +48,6 @@ class RISCV_store_seq extends uvm_sequence#(RISCV_transaction);
       assert(randomize()) else `uvm_fatal(get_type_name(), "Randomization failed!");
 
       // Build the store instruction (S-type encoding)
-      req.instr_ready = 1'b1;
       req.instr_data = {
         imm[11:5], rs2, rs1, funct3, imm[4:0], STORE_OPCODE
       };

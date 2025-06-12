@@ -36,12 +36,6 @@ class RISCV_coverage#(type T = RISCV_transaction) extends uvm_subscriber#(T);
       bins sw_bin = {3'b010}; // SW
     }
 
-    // Coverpoint for instr_ready signal
-    cp_instr_ready: coverpoint cov_trans.instr_ready {
-      bins ready     = {1};
-      bins not_ready = {0};
-    }
-
     // Coverpoint for address being written to
     cp_data_addr: coverpoint cov_trans.data_addr {
       bins low_addr  = {[32'h0000_0000 : 32'h0000_00FF]};

@@ -109,7 +109,6 @@ class RISCV_ref_model extends uvm_component;
   else if (opcode == 7'b0000011 && funct3 == 3'b010) begin
     exp_trans_local.data_addr = rs1 + imm;
     exp_trans_local.data_rd  = input_trans.data_rd;
-    exp_trans_local.data_rd_en_ctrl = 4'b1111;
     wb = '{rd: reg_dest, value: input_trans.data_rd, we: 1};
   end
   // SW instruction (S-type)
@@ -117,7 +116,6 @@ class RISCV_ref_model extends uvm_component;
     exp_trans_local.data_addr = rs1 + imm;
     exp_trans_local.data_wr  = rs2;
     exp_trans_local.data_wr_en_ma  = 1;
-    exp_trans_local.data_rd_en_ctrl = 4'b1111;
   end
   else begin
     `uvm_warning(get_full_name(), $sformatf("Unsupported instruction: 0x%h", input_trans.instr_data));

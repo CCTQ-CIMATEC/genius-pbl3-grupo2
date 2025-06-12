@@ -1,30 +1,34 @@
 /**
- * PBL3 - RISC-V Pipelined Processor
- * Top-level Pipeline Module
+ * PBL3 - RISC-V Pipelined Processor Core
  * 
- * File name: pipeline.sv
+ * File name: riscv_core.sv
  * 
  * Objective:
- *     Integrates all pipeline stages (Fetch, Decode, Execute, Memory, Writeback)
- *     and hazard detection unit to create a complete 5-stage RISC-V processor.
- * 
- * Pipeline Stages:
- *     1. Fetch (IF)    - Instruction fetch and PC management
- *     2. Decode (ID)   - Instruction decode and register file access
- *     3. Execute (EX)  - ALU operations and branch resolution
- *     4. Memory (MEM)  - Data memory access
- *     5. Writeback (WB) - Result selection and register writeback
+ *     5-stage pipelined RISC-V processor core without external memories.
+ *     Provides interfaces for external instruction and data memories.
  */
 
 `timescale 1ns/1ps
 
-module pipeline #(
+module riscv_core #(
     parameter P_DATA_WIDTH = 32,
     parameter P_ADDR_WIDTH = 10,
-    parameter P_REG_ADDR_WIDTH = 5
+    parameter P_REG_ADDR_WIDTH = 5,
+    parameter P_IMEM_ADDR_WIDTH = 9,
+    parameter P_DMEM_ADDR_WIDTH = 8
 )(
     input  logic i_clk,
-    input  logic i_rst_n
+    input  logic i_rst_n,
+    
+    // Instruction Memory Interface
+    output logic [P_IMEM_ADDR_WIDTH-1:0]  o_imem_addr,
+    input  logic [P_DATA_WIDTH-1:0]       i_imem_rdata,
+    
+    // Data Memory Interface
+    output logic                          o_dmem_we,
+    output logic [P_DMEM_ADDR_WIDTH-1:0]  o_dmem_addr,
+    output logic [P_DATA_WIDTH-1:0]       o_dmem_wdata,
+    input  logic [P_DATA_WIDTH-1:0]       i_dmem_rdata
 );
 
     //=========================================================================
@@ -92,10 +96,11 @@ module pipeline #(
     //=========================================================================
     
     //-------------------------------------------------------------------------
-    // Fetch Stage
+    // Fetch Stage (with external instruction memory interface)
     //-------------------------------------------------------------------------
     fetch_stage #(
-        .P_DATA_WIDTH(P_DATA_WIDTH)
+        .P_DATA_WIDTH(P_DATA_WIDTH),
+        .PC_WIDTH(P_IMEM_ADDR_WIDTH)
     ) u_fetch_stage (
         .i_clk          (i_clk),
         .i_rst_n        (i_rst_n),
@@ -103,7 +108,11 @@ module pipeline #(
         .i_stall_d      (stall_d),
         .i_flush_d      (flush_d),
         .i_pcsrc_e      (pcsrc),
-        .i_pctarget_e   (pc_target),
+        .i_pctarget_e   (pc_target[P_IMEM_ADDR_WIDTH:0]),
+        // External instruction memory interface
+        .o_imem_addr    (o_imem_addr),
+        .i_imem_rdata   (i_imem_rdata),
+        // Pipeline outputs
         .o_pc_d         (if_id_pc),
         .o_pc4_d        (if_id_pc4),
         .o_instr_d      (if_id_instr)
@@ -153,7 +162,6 @@ module pipeline #(
     ) u_execute_stage (
         .i_clk          (i_clk),
         .i_rst_n        (i_rst_n),
-        //.i_flush_e      (flush_e),
         .i_rs1_data_e   (id_ex_rs1_data),
         .i_rs2_data_e   (id_ex_rs2_data),
         .i_immext_e     (id_ex_immext),
@@ -185,11 +193,11 @@ module pipeline #(
     );
     
     //-------------------------------------------------------------------------
-    // Memory Stage
+    // Memory Stage (with external data memory interface)
     //-------------------------------------------------------------------------
     memory_stage #(
         .P_DATA_WIDTH(P_DATA_WIDTH),
-        .P_ADDR_WIDTH(P_ADDR_WIDTH)
+        .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
     ) u_memory_stage (
         .i_clk          (i_clk),
         .i_rst_n        (i_rst_n),
@@ -200,6 +208,12 @@ module pipeline #(
         .i_write_data_m (ex_mem_write_data),
         .i_rd_addr_m    (ex_mem_rd_addr),
         .i_pc4_m        (ex_mem_pc4),
+        // External data memory interface
+        .o_dmem_we      (o_dmem_we),
+        .o_dmem_addr    (o_dmem_addr),
+        .o_dmem_wdata   (o_dmem_wdata),
+        .i_dmem_rdata   (i_dmem_rdata),
+        // Pipeline outputs
         .o_read_data_w  (mem_wb_read_data),
         .o_regwrite_w   (mem_wb_regwrite),
         .o_resultsrc_w  (mem_wb_resultsrc),

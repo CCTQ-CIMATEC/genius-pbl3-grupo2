@@ -55,11 +55,9 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
     @(vif.dr_cb);
 
     // Drive instruction bus
-    vif.dr_cb.instr_ready <= req.instr_ready;
     vif.dr_cb.instr_data  <= req.instr_data;
 
     // Memory signals (optional for future enhancements)
-    vif.dr_cb.data_ready  <= req.data_ready;
     vif.dr_cb.data_rd     <= req.data_rd;
   endtask
 
@@ -69,9 +67,7 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
    */
   task reset();
     @(vif.dr_cb);
-    vif.dr_cb.instr_ready <= 0;
     vif.dr_cb.instr_data  <= 32'd0;
-    vif.dr_cb.data_ready  <= 0;
     vif.dr_cb.data_rd     <= 32'd0;
   endtask
 
