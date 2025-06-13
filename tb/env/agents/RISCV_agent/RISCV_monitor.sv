@@ -15,6 +15,8 @@ class RISCV_monitor extends uvm_monitor;
   virtual RISCV_interface vif;
   uvm_analysis_port #(RISCV_transaction) mon2sb_port;
 
+  RISCV_transaction transaction_queue[$];
+
   `uvm_component_utils(RISCV_monitor)
 
   function new (string name, uvm_component parent);
@@ -30,38 +32,53 @@ class RISCV_monitor extends uvm_monitor;
 
   virtual task run_phase(uvm_phase phase);
     // Aguarda sair do reset uma vez
-    wait(!vif.reset);
-    
+    wait(vif.reset);
+    repeat(1) @(posedge vif.clk);
     forever begin
-      collect_trans();
+      collect_inputs();   // Coleta entradas (instruções)
+      collect_outputs();  // Coleta saídas (resultados)
     end
   endtask : run_phase
 
-  task collect_trans();
+  task collect_inputs();
     RISCV_transaction act_trans;
 
     // Aguarda uma borda de clock antes de capturar
     @(posedge vif.clk);
     
-    // Só captura se não estiver em reset
     if (vif.reset) begin
-      act_trans = RISCV_transaction::type_id::create("act_trans", this);
+        act_trans = RISCV_transaction::type_id::create("act_trans", this);
+        
+        // Captura apenas as entradas
+        act_trans.instr_data = vif.instr_data;
+        act_trans.data_rd = vif.data_rd;
+        
+        // Adiciona à fila para processamento posterior
+        transaction_queue.push_back(act_trans);
 
-      // Inputs
-      act_trans.instr_data    = vif.instr_data;
-      act_trans.data_rd       = vif.data_rd;
+        `uvm_info(get_full_name(), $sformatf("Input captured: instr=0x%08h", act_trans.instr_data), UVM_LOW);
+      end
+  endtask : collect_inputs
 
-      // Outputs esperados
-      act_trans.inst_addr      = vif.inst_addr;
-      act_trans.data_wr        = vif.data_wr;
-      act_trans.data_addr      = vif.data_addr;
-      act_trans.data_wr_en_ma  = vif.data_wr_en_ma;
+  task collect_outputs();
+    RISCV_transaction complete_trans;
+    if (vif.reset && vif.instr_data != 0) begin
+       repeat(4) @(posedge vif.clk);
 
-      `uvm_info(get_full_name(), $sformatf("Monitor captured transaction:\n%s", act_trans.sprint()), UVM_LOW);
+        complete_trans = transaction_queue.pop_front();
 
-      mon2sb_port.write(act_trans);
+        complete_trans.inst_addr = vif.inst_addr;
+        complete_trans.data_wr = vif.data_wr;
+        complete_trans.data_addr = vif.data_addr;
+        complete_trans.data_wr_en_ma = vif.data_wr_en_ma;
+        
+        `uvm_info(get_full_name(), $sformatf("Monitor captured complete transaction"), UVM_LOW);
+        complete_trans.print();
+        
+        // Envia para o scoreboard
+        mon2sb_port.write(complete_trans);
     end
-  endtask : collect_trans
+  endtask : collect_outputs
 
 endclass : RISCV_monitor
 

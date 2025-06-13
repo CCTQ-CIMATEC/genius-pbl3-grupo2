@@ -31,7 +31,7 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
 
   virtual task run_phase(uvm_phase phase);
     reset();
-    wait(!vif.reset);
+    wait(vif.reset);
     
     forever begin
       // Get the next transaction from sequencer
@@ -50,6 +50,8 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
       
       // Signal completion to sequencer
       seq_item_port.item_done();
+      
+      repeat(4) @(posedge vif.clk); //await a little before send a new transactions
     end
   endtask
 

@@ -113,6 +113,7 @@ class RISCV_ref_model extends uvm_component;
   end
   // SW instruction (S-type)
   else if (opcode == 7'b0100011 && funct3 == 3'b010) begin
+    imm = {{20{input_trans.instr_data[31]}}, input_trans.instr_data[31:25], input_trans.instr_data[11:7]};
     exp_trans_local.data_addr = rs1 + imm;
     exp_trans_local.data_wr  = rs2;
     exp_trans_local.data_wr_en_ma  = 1;
