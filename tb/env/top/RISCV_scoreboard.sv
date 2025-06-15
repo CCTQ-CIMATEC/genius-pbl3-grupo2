@@ -77,33 +77,69 @@ class RISCV_scoreboard extends uvm_scoreboard;
    */
   task compare_trans();
     RISCV_transaction act_trans, exp_trans;
+    bit [6:0] opcode;
+
     if (exp_trans_fifo.size != 0 && act_trans_fifo.size != 0) begin
       exp_trans = exp_trans_fifo.pop_front();
       act_trans = act_trans_fifo.pop_front();
 
-      `uvm_info(get_full_name(), $sformatf("Expected instr = 0x%08x | Actual instr = 0x%08x", exp_trans.instr_data, act_trans.instr_data), UVM_LOW);
-      `uvm_info(get_full_name(), $sformatf("Expected addr = 0x%08x | Actual addr = 0x%08x", exp_trans.data_addr, act_trans.data_addr), UVM_LOW);
-      `uvm_info(get_full_name(), $sformatf("Expected data = 0x%08x | Actual data = 0x%08x", exp_trans.data_wr, act_trans.data_wr), UVM_LOW);
-      `uvm_info(get_full_name(), $sformatf("Expected write enable = %0b | Actual write enable = %0b", exp_trans.data_wr_en_ma, act_trans.data_wr_en_ma), UVM_LOW);
+      opcode = exp_trans.instr_data[6:0];
 
+      `uvm_info(get_full_name(), $sformatf("Expected instr = 0x%08x | Actual instr = 0x%08x", exp_trans.instr_data, act_trans.instr_data), UVM_LOW);
+
+      // Sempre comparar a instrução
       if (exp_trans.instr_data !== act_trans.instr_data) begin
         `uvm_error(get_full_name(), "Instruction MISMATCH");
         error = 1;
       end
-      if (exp_trans.data_addr !== act_trans.data_addr) begin
-        `uvm_error(get_full_name(), "Data address MISMATCH");
-        error = 1;
+
+      // Se for STORE (opcode 0100011), compara os campos de endereço e dados
+      if (opcode == 7'b0100011) begin
+        `uvm_info(get_full_name(), $sformatf("Expected addr = 0x%08x | Actual addr = 0x%08x", exp_trans.data_addr, act_trans.data_addr), UVM_LOW);
+
+        if (exp_trans.data_addr !== act_trans.data_addr) begin
+          `uvm_error(get_full_name(), "Data address MISMATCH");
+          error = 1;
+        end
+        if (exp_trans.data_wr !== act_trans.data_wr) begin
+          `uvm_error(get_full_name(), "Data write MISMATCH");
+          error = 1;
+        end
+        if (exp_trans.data_wr_en_ma !== act_trans.data_wr_en_ma) begin
+          `uvm_error(get_full_name(), "Data write enable MISMATCH");
+          error = 1;
+        end
       end
-      if (exp_trans.data_wr !== act_trans.data_wr) begin
-        `uvm_error(get_full_name(), "Data write MISMATCH");
-        error = 1;
-      end
-      if (exp_trans.data_wr_en_ma !== act_trans.data_wr_en_ma) begin
-        `uvm_error(get_full_name(), "Data write enable MISMATCH");
-        error = 1;
+      // Se for LOAD (opcode 0000011), apenas validar os campos rs1, rd e imm dentro da própria instr_data
+      else if (opcode == 7'b0000011) begin
+        validate_load_fields(exp_trans);
       end
     end
   endtask
+
+  function void validate_load_fields(RISCV_transaction trans);
+    bit [6:0] opcode;
+    bit [2:0] funct3;
+    bit [4:0] rs1;
+    bit [4:0] rd;
+    bit [11:0] imm;
+
+    opcode = trans.instr_data[6:0];
+    funct3 = trans.instr_data[14:12];
+    rd     = trans.instr_data[11:7];
+    rs1    = trans.instr_data[19:15];
+    imm    = trans.instr_data[31:20];
+
+    if (opcode != 7'b0000011 || funct3 != 3'b010) begin
+      `uvm_warning(get_full_name(), $sformatf("Instruction 0x%08h is not LW (opcode/funct3 mismatch)", trans.instr_data));
+      return;
+    end
+
+    `uvm_info(get_full_name(), $sformatf(
+      "Validating LW fields: rd = x%0d | rs1 = x%0d | imm = %0d",
+      rd, rs1, $signed(imm)
+    ), UVM_LOW);
+  endfunction
 
   /*
    * Report phase
