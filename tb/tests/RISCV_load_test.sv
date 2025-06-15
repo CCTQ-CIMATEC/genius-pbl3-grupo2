@@ -51,15 +51,3 @@ class RISCV_load_test extends uvm_test;
 endclass : RISCV_load_test
 
 `endif
-
-
-
-
-
-
-
-
-
-
-
-

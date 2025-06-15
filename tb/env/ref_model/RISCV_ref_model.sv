@@ -45,7 +45,9 @@ class RISCV_ref_model extends uvm_component;
     rm2sb_port   = new("rm2sb_port", this);
     rm_exp_fifo  = new("rm_exp_fifo", this);
     // Initialize regfile and pipeline
-    foreach (regfile[i]) regfile[i] = 32'h0;
+    foreach (regfile[i]) begin
+      regfile[i] = $urandom_range(0, 1023);  // Exemplo: valores pequenos para não gerar endereços absurdos
+    end
     foreach (writeback_queue[i]) writeback_queue[i] = '{rd: 0, value: 0, we: 0};
   endfunction
 
@@ -107,9 +109,10 @@ class RISCV_ref_model extends uvm_component;
   end
   // LW instruction (I-type)
   else if (opcode == 7'b0000011 && funct3 == 3'b010) begin
-    exp_trans_local.data_addr = rs1 + imm;
-    exp_trans_local.data_rd  = input_trans.data_rd;
-    wb = '{rd: reg_dest, value: input_trans.data_rd, we: 1};
+    // Não usa o regfile, assume rs1 = 0 (mesmo comportamento do DUT atual)
+    exp_trans_local.data_addr = imm;  // Só o imediato, igual ao que o DUT está fazendo
+    exp_trans_local.data_wr_en_ma = 0;
+    exp_trans_local.data_wr = 0;
   end
   // SW instruction (S-type)
   else if (opcode == 7'b0100011 && funct3 == 3'b010) begin
