@@ -23,6 +23,7 @@ package RISCV_seq_list;
    * Including RISCV store sequence 
    */
   `include "RISCV_store_seq.sv"
+  `include "RISCV_load_seq.sv"
 
 endpackage
 

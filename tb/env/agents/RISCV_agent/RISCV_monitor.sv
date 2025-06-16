@@ -7,11 +7,11 @@
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef RISCV_MONITOR 
+`ifndef RISCV_MONITOR
 `define RISCV_MONITOR
 
 class RISCV_monitor extends uvm_monitor;
- 
+
   virtual RISCV_interface vif;
   uvm_analysis_port #(RISCV_transaction) mon2sb_port;
 
