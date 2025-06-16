@@ -45,9 +45,7 @@ class RISCV_ref_model extends uvm_component;
     rm2sb_port   = new("rm2sb_port", this);
     rm_exp_fifo  = new("rm_exp_fifo", this);
     // Initialize regfile and pipeline
-    foreach (regfile[i]) begin
-      regfile[i] = $urandom_range(0, 1023);  // Exemplo: valores pequenos para não gerar endereços absurdos
-    end
+    foreach (regfile[i]) regfile[i] = 32'h0;
     foreach (writeback_queue[i]) writeback_queue[i] = '{rd: 0, value: 0, we: 0};
   endfunction
 

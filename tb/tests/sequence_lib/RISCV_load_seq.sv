@@ -29,8 +29,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
   endfunction
 
   virtual task body();
-    `uvm_info(get_full_name(), "======= Executando LOAD sequence com randomização =======", UVM_LOW);
-
+   // Generate multiple load transactions
     repeat(`NO_OF_TRANSACTIONS) begin
       req = RISCV_transaction::type_id::create("req");
       start_item(req);
