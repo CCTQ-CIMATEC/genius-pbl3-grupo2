@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 // This UVM test sets up the environment and sequence for the RISCV verification.
 //
-// Author: Gustavo Santiago
+// Author: Leonardo Rodrigues
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
