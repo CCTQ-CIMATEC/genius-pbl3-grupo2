@@ -1,0 +1,3 @@
+[submodule "ip_lib/genius-pbl3-grupo1"]
+	path = ip_lib/genius-pbl3-grupo1
+	url = https://github.com/CCTQ-CIMATEC/genius-pbl3-grupo1.git
