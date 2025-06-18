@@ -1,4 +1,4 @@
-${PRIMA_RV32IA}/srclist/testbench_riscv_top.srclist
+${P_RV32I}/srclist/testbench_riscv_top.srclist
 ${RISCV_RV32I}/tb/env/agents/RISCV_agent/RISCV_agent_pkg.sv 
 ${RISCV_RV32I}/tb/env/ref_model/RISCV_ref_model_pkg.sv 
 ${RISCV_RV32I}/tb/env/top/RISCV_env_pkg.sv
