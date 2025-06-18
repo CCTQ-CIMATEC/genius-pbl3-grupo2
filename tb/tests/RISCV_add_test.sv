@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// load test for RISCV
+// add test for RISCV
 //------------------------------------------------------------------------------
 // This UVM test sets up the environment and sequence for the RISCV verification.
 //
@@ -7,24 +7,24 @@
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef RISCV_LOAD_TEST 
-`define RISCV_LOAD_TEST
+`ifndef RISCV_ADD_TEST 
+`define RISCV_ADD_TEST
 
-class RISCV_load_test extends uvm_test;
+class RISCV_add_test extends uvm_test;
  
   /*
    * Declare component utilities for the test-case
    */
-  `uvm_component_utils(RISCV_load_test)
+  `uvm_component_utils(RISCV_add_test)
  
   RISCV_environment env;
-  RISCV_load_seq   seq;
+  RISCV_add_seq     seq;
  
   /*
    * Constructor: new
    * Initializes the test with a given name and parent component.
    */
-  function new(string name = "RISCV_load_test", uvm_component parent = null);
+  function new(string name = "RISCV_add_test", uvm_component parent = null);
     super.new(name, parent);
   endfunction : new
  
@@ -35,7 +35,7 @@ class RISCV_load_test extends uvm_test;
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     env = RISCV_environment::type_id::create("env", this);
-    seq = RISCV_load_seq::type_id::create("seq");
+    seq = RISCV_add_seq::type_id::create("seq");
   endfunction : build_phase
  
   /*
@@ -48,6 +48,6 @@ class RISCV_load_test extends uvm_test;
     phase.drop_objection(this);
   endtask : run_phase
  
-endclass : RISCV_load_test
+endclass : RISCV_add_test
 
 `endif
