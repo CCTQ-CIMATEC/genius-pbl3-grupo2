@@ -55,11 +55,8 @@ class RISCV_add_seq extends uvm_sequence#(RISCV_transaction);
       };
 
       req.instr_name   = $sformatf("ADD x%0d, x%0d, x%0d", rs2_addr, rs1_addr, rd_addr);
-      req.instr_values = $sformatf("ADD x%08x, x%08x, x%08x", rs2_value, rs1_value, rd_value);
 
       `uvm_info(get_full_name(), $sformatf("Generated add instruction: %s", req.instr_name), UVM_LOW);
-      
-      `uvm_info(get_full_name(), $sformatf("ADD values: %s", req.instr_values), UVM_LOW);
 
       finish_item(req);
     end
