@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 // This package includes all the tests for the RISCV simulation.
 //
-// Author: Leonardo Rodrigues
+// Author: Gustavo Santiago
 // Date  : June 2025
 //------------------------------------------------------------------------------
 

@@ -24,7 +24,6 @@ class RISCV_transaction extends uvm_sequence_item;
 
   // Instruction type name, useful for debugging and logging
   string instr_name;
-  string instr_values;
 
   `uvm_object_utils_begin(RISCV_transaction)
     `uvm_field_int(instr_data,        UVM_ALL_ON)
@@ -34,7 +33,6 @@ class RISCV_transaction extends uvm_sequence_item;
     `uvm_field_int(data_addr,         UVM_ALL_ON)
     `uvm_field_int(data_wr_en_ma,     UVM_ALL_ON)
     `uvm_field_string(instr_name,     UVM_ALL_ON)
-    `uvm_field_string(instr_values,   UVM_ALL_ON)
   `uvm_object_utils_end
 
   // Constructor

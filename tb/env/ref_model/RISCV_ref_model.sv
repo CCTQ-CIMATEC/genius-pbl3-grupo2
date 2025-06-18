@@ -102,7 +102,7 @@ class RISCV_ref_model extends uvm_component;
 
   // ADD instruction (R-type)
   if (opcode == 7'b0110011 && funct3 == 3'b000 && funct7 == 7'b0000000) begin
-    exp_trans_local.data_addr = rs1 + rs2; 
+    exp_trans_local.data_addr = rs1 + rs2;
     wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
   end
   // LW instruction (I-type)
