@@ -52,13 +52,11 @@ class RISCV_add_seq extends uvm_sequence#(RISCV_transaction);
        ADD_FUNCT7, rs2_addr, rs1_addr, rd_addr, ADD_FUNCT3, ADD_OPCODE 
       };
 
-      req.instr_name = $sformatf("ADD ADDRESS: x%0d, x%0d, x%0d", rd_addr,  rs1_addr,  rs2_addr);
+            req.instr_name = $sformatf("ADD ADDRESS: x%0d, x%0d, x%0d | ADD VALUES: %0d + %0d = %0d", 
+                                      rd_addr, rs1_addr, rs2_addr, rs1_value, rs2_value, rd_value);
 
         `uvm_info(get_full_name(), $sformatf("Generated add instruction: %s", req.instr_name), UVM_LOW);
 
-      req.instr_values = $sformatf("ADD VALUES:   %0d,  %0d,  %0d", rd_value, rs1_value, rs2_value);    
-      
-        `uvm_info(get_full_name(), $sformatf("ADD values: %s", req.instr_values), UVM_LOW);
 
       finish_item(req);
     end

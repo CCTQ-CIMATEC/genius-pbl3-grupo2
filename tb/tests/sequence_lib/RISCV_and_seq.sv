@@ -38,7 +38,7 @@ class RISCV_and_seq extends uvm_sequence#(RISCV_transaction);
       start_item(req);
 
       if (!randomize(rs1_addr, rs2_addr, rs1_value, rs2_value)) begin
-        `uvm_fatal(get_type_name(), "Randomization failed!");
+         `uvm_fatal(get_type_name(), "Randomization failed!");
       end
 
       // Monta a instrução tipo R (AND)
@@ -46,11 +46,9 @@ class RISCV_and_seq extends uvm_sequence#(RISCV_transaction);
         AND_FUNCT7, rs2_addr, rs1_addr, AND_FUNCT3, rd_addr, AND_OPCODE 
       };
 
-      req.instr_name = $sformatf("AND ADDRESS: x%0d, x%0d, x%0d", rd_addr, rs1_addr, rs2_addr);
-      `uvm_info(get_full_name(), $sformatf("Generated AND instruction: %s", req.instr_name), UVM_LOW);
+      req.instr_name = $sformatf("AND ADDRESS: x%0d, x%0d, x%0d | AND VALUES: %0d & %0d", 
+                                      rd_addr, rs1_addr, rs2_addr, rs1_value, rs2_value);
 
-      req.instr_values = $sformatf("AND VALUES:   %0d & %0d", rs1_value, rs2_value);    
-      `uvm_info(get_full_name(), $sformatf("AND values: %s", req.instr_values), UVM_LOW);
 
       finish_item(req);
     end
