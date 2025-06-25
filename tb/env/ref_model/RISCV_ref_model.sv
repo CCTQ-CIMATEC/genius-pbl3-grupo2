@@ -83,6 +83,7 @@ class RISCV_ref_model extends uvm_component;
   bit [4:0] reg_dest;
   bit [31:0] rs1, rs2;
   bit [31:0] imm;
+  bit [31:0] data_rd;
   wb_info_t wb;
 
   exp_trans_local = RISCV_transaction::type_id::create("exp_trans_local");
@@ -93,10 +94,11 @@ class RISCV_ref_model extends uvm_component;
   reg1_addr = input_trans.instr_data[19:15];
   reg2_addr = input_trans.instr_data[24:20];
   reg_dest = input_trans.instr_data[11:7];
+  data_rd = input_trans.data_rd;
   imm = {{20{input_trans.instr_data[31]}}, input_trans.instr_data[31:20]};
 
-  rs1 = regfile[reg1_addr];
-  rs2 = regfile[reg2_addr];
+  rs1 = get_forwarded_value(reg1_addr);
+  rs2 = get_forwarded_value(reg2_addr);
   
   wb = '{rd: 0, value: 0, we: 0};
 
@@ -107,10 +109,12 @@ class RISCV_ref_model extends uvm_component;
   end
   // LW instruction (I-type)
   else if (opcode == 7'b0000011 && funct3 == 3'b010) begin
-    // Não usa o regfile, assume rs1 = 0 (mesmo comportamento do DUT atual)
-    exp_trans_local.data_addr = imm;  // Só o imediato, igual ao que o DUT está fazendo
+    exp_trans_local.data_addr = imm + rs1;
     exp_trans_local.data_wr_en_ma = 0;
     exp_trans_local.data_wr = 0;
+    exp_trans_local.data_rd = data_rd;
+    wb = '{rd: reg_dest, value: exp_trans_local.data_rd, we: 1};
+    `uvm_info(get_full_name(), $sformatf("Test: %d , %d, %d", imm, rs1, exp_trans_local.data_addr), UVM_LOW);
   end
   // SW instruction (S-type)
   else if (opcode == 7'b0100011 && funct3 == 3'b010) begin
@@ -126,6 +130,20 @@ class RISCV_ref_model extends uvm_component;
   writeback_queue[4] = wb;
   rm2sb_port.write(exp_trans_local);
 endtask
+
+function bit [31:0] get_forwarded_value(input bit [4:0] reg_addr);
+    if (reg_addr == 0) return 0; // x0 sempre é zero
+    
+    // Verifica do estágio mais recente (índice mais alto) para o mais antigo
+    for (int i = 4; i >= 1; i--) begin
+      if (writeback_queue[i].we && (writeback_queue[i].rd == reg_addr)) begin
+        return writeback_queue[i].value;
+      end
+    end
+    
+    // Se não encontrou no pipeline, retorna valor do banco de registradores
+    return regfile[reg_addr];
+  endfunction
 
 endclass
 

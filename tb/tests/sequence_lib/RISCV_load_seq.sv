@@ -19,6 +19,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
   rand bit [4:0] rs1;
   rand bit [4:0] rd;
   rand bit [11:0] imm;
+  rand bit [31:0] data_to_load;
 
   // Constantes fixas para LW
   localparam bit [6:0] LOAD_OPCODE = 7'b0000011;
@@ -34,7 +35,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
       req = RISCV_transaction::type_id::create("req");
       start_item(req);
 
-      if (!randomize(rs1, rd, imm)) begin
+      if (!randomize(rs1, rd, imm, data_to_load)) begin
         `uvm_fatal(get_type_name(), "Randomization failed!");
       end
 
@@ -50,6 +51,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
         LOAD_OPCODE // [6:0] opcode
       };
 
+      req.data_rd = data_to_load; // Dados que serão lidos
       req.instr_name = $sformatf("LW x%0d, %0d(x%0d)", rd, $signed(imm), rs1);
 
       // Não preenche manualmente data_addr, data_rd, etc.

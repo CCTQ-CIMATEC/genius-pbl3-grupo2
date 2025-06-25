@@ -11,7 +11,7 @@
 `define RISCV_DEFINES
 
   `define RISCV_WIDTH 4 
-  `define NO_OF_TRANSACTIONS 3
+  `define NO_OF_TRANSACTIONS 8
 
   `define P_DATA_WIDTH 32
   `define P_ADDR_WIDTH 10
