@@ -20,7 +20,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
   rand bit [4:0] rd;
   rand bit [11:0] imm;
   rand bit [31:0] data_to_load;
-
+  
   // Constantes fixas para LW
   localparam bit [6:0] LOAD_OPCODE = 7'b0000011;
   localparam bit [2:0] LW_FUNCT3   = 3'b010;
