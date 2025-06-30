@@ -17,12 +17,6 @@ class RISCV_add_seq extends uvm_sequence#(RISCV_transaction);
 
   // Campos que serão randomizados
   
-  rand bit [31:0] rs1_value; 
-  rand bit [31:0] rs2_value; 
-  rand bit [31:0] rd_value;  
-
-  logic [31:0] regfile[32];
-
   rand bit [4:0]  rs2_addr;  
   rand bit [4:0]  rs1_addr;  
   rand bit [4:0]  rd_addr;  
@@ -43,7 +37,7 @@ class RISCV_add_seq extends uvm_sequence#(RISCV_transaction);
       req = RISCV_transaction::type_id::create("req");
       start_item(req);
 
-      if (!randomize(rs1_addr, rs2_addr, rs1_value, rs2_value)) begin
+      if (!randomize(rs1_addr, rs2_addr, rd_addr)) begin
         `uvm_fatal(get_type_name(), "Randomization failed!");
       end
 
@@ -52,8 +46,7 @@ class RISCV_add_seq extends uvm_sequence#(RISCV_transaction);
        ADD_FUNCT7, rs2_addr, rs1_addr, rd_addr, ADD_FUNCT3, ADD_OPCODE 
       };
 
-            req.instr_name = $sformatf("ADD ADDRESS: x%0d, x%0d, x%0d | ADD VALUES: %0d + %0d = %0d", 
-                                      rd_addr, rs1_addr, rs2_addr, rs1_value, rs2_value, rd_value);
+            req.instr_name = $sformatf("ADD ADDRESS: x%0d, x%0d, x%0d", rd_addr, rs1_addr, rs2_addr);
 
         `uvm_info(get_full_name(), $sformatf("Generated add instruction: %s", req.instr_name), UVM_LOW);
 
