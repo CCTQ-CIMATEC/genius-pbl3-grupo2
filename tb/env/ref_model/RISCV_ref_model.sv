@@ -91,12 +91,15 @@ class RISCV_ref_model extends uvm_component;
     reg1_addr  = input_trans.instr_data[19:15];
     reg2_addr  = input_trans.instr_data[24:20];
     reg_dest   = input_trans.instr_data[11:7];
+    data_rd    = input_trans.data_rd;
 
     rs1 = get_forwarded_value(reg1_addr);
     rs2 = get_forwarded_value(reg2_addr);
 
     wb = '{rd: 0, value: 0, we: 0};
     `uvm_info(get_full_name(), $sformatf("TESTE rs1_addr = %d => rs1_value = %d | rs2_addr = %d => rs2_value = %d ", reg1_addr, rs1, reg2_addr, rs2), UVM_LOW);
+
+    
     case (opcode)
       LUI: begin
         imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
@@ -193,6 +196,11 @@ class RISCV_ref_model extends uvm_component;
     endcase
 
     writeback_queue[4] = wb;
+    
+    for (int i = 0; i <= 4; i++) begin
+      `uvm_info(get_full_name(), $sformatf("TESTE2 queue indice = %d => value = %0h", i, writeback_queue[i].value), UVM_LOW);
+    end
+
     rm2sb_port.write(exp_trans_local);
   endtask
 
