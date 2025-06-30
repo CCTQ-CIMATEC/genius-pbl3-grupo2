@@ -21,13 +21,6 @@ class RISCV_ref_model extends uvm_component;
   // Shadow register file (x0–x31, x0 always zero)
   logic [31:0] regfile[32];
 
-  // Writeback pipeline entry
-  typedef struct {
-    logic [4:0]  rd;
-    logic [31:0] value;
-    bit          we;
-  } wb_info_t;
-
   // 5-stage pipeline to model writeback delay
   wb_info_t writeback_queue[5];
 
@@ -75,7 +68,10 @@ class RISCV_ref_model extends uvm_component;
 
   task automatic process_instruction(RISCV_transaction input_trans);
   RISCV_transaction exp_trans_local;
-  bit [6:0] opcode;
+  opcodeType opcode;
+  aluOpType alu_op;
+
+
   bit [2:0] funct3;
   bit [6:0] funct7;
   bit [4:0] reg1_addr;
@@ -88,49 +84,105 @@ class RISCV_ref_model extends uvm_component;
 
   exp_trans_local = RISCV_transaction::type_id::create("exp_trans_local");
   exp_trans_local.copy(input_trans);
-  opcode = input_trans.instr_data[6:0];
+  opcode = opcodeType'(input_trans.instr_data[6:0]);
   funct3 = input_trans.instr_data[14:12];
   funct7 = input_trans.instr_data[31:25];
   reg1_addr = input_trans.instr_data[19:15];
   reg2_addr = input_trans.instr_data[24:20];
   reg_dest = input_trans.instr_data[11:7];
-  data_rd = input_trans.data_rd;
-  imm = {{20{input_trans.instr_data[31]}}, input_trans.instr_data[31:20]};
 
   rs1 = get_forwarded_value(reg1_addr);
   rs2 = get_forwarded_value(reg2_addr);
-  
+
   wb = '{rd: 0, value: 0, we: 0};
 
-  // ADD instruction (R-type)
-  if (opcode == 7'b0110011 && funct3 == 3'b000 && funct7 == 7'b0000000) begin
-    exp_trans_local.data_addr = rs1 + rs2;
+  case (opcode)
+  LUI: begin
+    imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
+    exp_trans_local.data_addr = imm;
     wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-  end
-  // ADDI instruction (R-type)
-  if (opcode == 7'b0010011 && funct3 == 3'b000) begin
-    exp_trans_local.data_addr = rs1 + imm;
+end
+AUIPC: begin
+    imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
+    exp_trans_local.data_addr = get_alu_result(ALU_ADD, exp_trans_local.inst_addr, imm);
+    exp_trans_local.data_wr = imm;
     wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-  end
-  // LW instruction (I-type)
-  else if (opcode == 7'b0000011 && funct3 == 3'b010) begin
-    exp_trans_local.data_addr = imm + rs1;
+
+end
+JAL: begin
+  imm = get_sign_extend_result(IMM_J, input_trans.instr_data[31:7]);
+  exp_trans_local.inst_addr = get_alu_result(ALU_ADD, input_trans.inst_addr, imm);
+  exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, rs2);
+  wb = '{rd: reg_dest, value: (input_trans.inst_addr + 4), we: 1};
+end
+JALR: begin
+    imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
+  exp_trans_local.inst_addr = get_alu_result(ALU_ADD, rs1, imm);
+  exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, rs2);
+  wb = '{rd: reg_dest, value: (input_trans.inst_addr + 4), we: 1};
+end
+BRCH_S: begin
+    imm = get_sign_extend_result(IMM_B, input_trans.instr_data[31:7]);
+    alu_op = ALU_EQUAL; // Default comparison: equal
+
+    case (funct3)
+        3'b001: alu_op = ALU_NEQUAL; // Not equal
+        3'b100: alu_op = ALU_LT;     // Signed less than
+        3'b101: alu_op = ALU_GT;     // Signed greater than or equal
+        3'b110: alu_op = ALU_LTU;    // Unsigned less than
+        3'b111: alu_op = ALU_GTU;    // Unsigned greater than or equal
+    endcase
+
+    exp_trans_local.data_addr = get_alu_result(alu_op, rs1, rs2);
+    if(exp_trans_local.data_addr) begin
+      exp_trans_local.inst_addr = get_alu_result(ALU_ADD, input_trans.inst_addr, imm);
+    end
+end
+LOAD_S: begin
+  imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
+  exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, imm);
     exp_trans_local.data_wr_en_ma = 0;
-    exp_trans_local.data_wr = 0;
+    exp_trans_local.data_wr = rs2;
     exp_trans_local.data_rd = data_rd;
     wb = '{rd: reg_dest, value: exp_trans_local.data_rd, we: 1};
-    `uvm_info(get_full_name(), $sformatf("Test: %d , %d, %d", imm, rs1, exp_trans_local.data_addr), UVM_LOW);
-  end
-  // SW instruction (S-type)
-  else if (opcode == 7'b0100011 && funct3 == 3'b010) begin
-    imm = {{20{input_trans.instr_data[31]}}, input_trans.instr_data[31:25], input_trans.instr_data[11:7]};
-    exp_trans_local.data_addr = rs1 + imm;
-    exp_trans_local.data_wr  = rs2;
+end
+STORE_S: begin
+  imm = get_sign_extend_result(IMM_S, input_trans.instr_data[31:7]);
+  exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, imm);
+  exp_trans_local.data_wr  = rs2;
     exp_trans_local.data_wr_en_ma  = 1;
-  end
-  else begin
-    `uvm_warning(get_full_name(), $sformatf("Unsupported instruction: 0x%h", input_trans.instr_data));
-  end
+end
+ALUI_S: begin
+  imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
+  alu_op = ALU_ADD;
+
+  if (funct3 == 3'b001 || funct3 == 3'b101)
+    imm = get_sign_extend_result(IMM_IS, input_trans.instr_data[31:7]);
+
+  if (funct3 == 3'b101 && funct7[5])
+    alu_op = ALU_SRA;
+  else
+    alu_op = aluOpType'({1'b0, funct3});
+
+  exp_trans_local.data_addr = get_alu_result(alu_op, rs1, imm);
+  wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
+end
+ALU_S: begin
+  if (funct3 == 3'b000 && funct7[5])
+    alu_op = ALU_SUB;
+  else if (funct3 == 3'b101 && funct7[5])
+    alu_op = ALU_SRA;
+  else
+    alu_op = aluOpType'({1'b0, funct3});
+
+  exp_trans_local.data_addr = get_alu_result(alu_op, rs1, rs2);
+  wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
+end
+      
+      default: begin 
+        `uvm_warning(get_full_name(), $sformatf("Unsupported instruction: 0x%h", input_trans.instr_data));
+      end
+      endcase
 
   writeback_queue[4] = wb;
   rm2sb_port.write(exp_trans_local);
@@ -149,6 +201,63 @@ function bit [31:0] get_forwarded_value(input bit [4:0] reg_addr);
     // Se não encontrou no pipeline, retorna valor do banco de registradores
     return regfile[reg_addr];
   endfunction
+
+  function bit [31:0] get_alu_result(input aluOpType    alu_op, input bit [31:0] SrcA, input bit [31:0] SrcB);
+  bit [31:0] ALUResult = 0;
+        case (alu_op)
+            // Arithmetic operations
+            ALU_ADD   : ALUResult = $signed(SrcA) + $signed(SrcB);              // Signed addition
+            ALU_SUB   : ALUResult = $signed(SrcA) - $signed(SrcB);              // Signed subtraction
+
+            // Logical operations
+            ALU_XOR   : ALUResult = SrcA ^ SrcB;                                // Bitwise XOR
+            ALU_OR    : ALUResult = SrcA | SrcB;                                // Bitwise OR
+            ALU_AND   : ALUResult = SrcA & SrcB;                                // Bitwise AND
+
+            // Shift operations
+            ALU_SLL   : ALUResult = SrcA << SrcB[4:0];                          // Logical left shift
+            ALU_SRL   : ALUResult = SrcA >> SrcB[4:0];                          // Logical right shift
+            ALU_SRA   : ALUResult = $signed(SrcA) >>> SrcB[4:0];                // Arithmetic right shift
+
+            // Comparison operations
+            ALU_EQUAL : ALUResult = (SrcA == SrcB) ? 1 : 0;                     // Equality comparison
+            ALU_NEQUAL: ALUResult = (SrcA != SrcB) ? 1 : 0;                     // Inequality comparison
+            ALU_LT    : ALUResult = ($signed(SrcA) < $signed(SrcB)) ? 1 : 0;    // Signed less-than
+            ALU_GT    : ALUResult = ($signed(SrcA) >= $signed(SrcB)) ? 1 : 0;   // Signed greater-or-equal
+            ALU_LTU   : ALUResult = (SrcA < SrcB) ? 1 : 0;                      // Unsigned less-than
+            ALU_GTU   : ALUResult = (SrcA >= SrcB) ? 1 : 0;                     // Unsigned greater-or-equal
+
+            // Bypass operation
+            ALU_BPS2  : ALUResult = SrcB;                                       // Bypass source operand B directly
+        endcase
+
+  return ALUResult;
+endfunction
+
+function bit [31:0] get_sign_extend_result(input imm_src_t i_imm_src, input [31:7] i_instr);
+bit [31:0] o_imm_out = 32'b0; // Valor padrão, evita latch
+
+case (i_imm_src)
+    // I-type (ex: LW, ADDI, ANDI, etc.)
+    IMM_I: o_imm_out = {{20{i_instr[31]}}, i_instr[31:20]};
+    
+    IMM_IS: o_imm_out = {{27{i_instr[31]}}, i_instr[24:20]};
+    // S-type (ex: SW, SH, SB)
+    IMM_S: o_imm_out = {{20{i_instr[31]}}, i_instr[31:25], i_instr[11:7]};
+
+    // B-type (ex: BEQ, BNE, etc.) com LSB 0 (instruções alinhadas)
+    IMM_B: o_imm_out = {{20{i_instr[31]}}, i_instr[7], i_instr[30:25], i_instr[11:8], 1'b0};
+
+    //U-type (ex: LUI AUIPC)
+    IMM_U: o_imm_out = {{20{i_instr[31]}}, i_instr[31:12]};
+
+    // J-type (ex: JAL), com LSB 0
+    IMM_J: o_imm_out = {{12{i_instr[31]}}, i_instr[19:12], i_instr[20], i_instr[30:21], 1'b0};
+endcase
+
+return o_imm_out;
+  
+endfunction
 
 endclass
 
