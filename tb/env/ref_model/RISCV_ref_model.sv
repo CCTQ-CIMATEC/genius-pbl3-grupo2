@@ -97,9 +97,7 @@ class RISCV_ref_model extends uvm_component;
     rs2 = get_forwarded_value(reg2_addr);
 
     wb = '{rd: 0, value: 0, we: 0};
-    `uvm_info(get_full_name(), $sformatf("TESTE rs1_addr = %d => rs1_value = %d | rs2_addr = %d => rs2_value = %d ", reg1_addr, rs1, reg2_addr, rs2), UVM_LOW);
 
-    
     case (opcode)
       LUI: begin
         imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
@@ -196,11 +194,6 @@ class RISCV_ref_model extends uvm_component;
     endcase
 
     writeback_queue[4] = wb;
-    
-    for (int i = 0; i <= 4; i++) begin
-      `uvm_info(get_full_name(), $sformatf("TESTE2 queue indice = %d => value = %0h", i, writeback_queue[i].value), UVM_LOW);
-    end
-
     rm2sb_port.write(exp_trans_local);
   endtask
 
@@ -208,7 +201,7 @@ class RISCV_ref_model extends uvm_component;
     if (reg_addr == 0) return 0;
 
     // Check from the newest (index 4) to the oldest (index 1)
-    for (int i = 4; i >= 1; i--) begin
+    for (int i = 4; i >= 0; i--) begin
       if (writeback_queue[i].we && (writeback_queue[i].rd == reg_addr)) begin
         return writeback_queue[i].value;
       end
