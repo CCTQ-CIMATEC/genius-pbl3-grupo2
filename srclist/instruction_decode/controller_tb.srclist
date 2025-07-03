@@ -1,3 +1,3 @@
-rtl/riscv_definitions.sv
-rtl/controller.sv
-tb/controller_tb.sv
+${RISCV_RV32I}/rtl/riscv_definitions.sv
+${RISCV_RV32I}/rtl/controller.sv
+${RISCV_RV32I}/tb/controller_tb.sv

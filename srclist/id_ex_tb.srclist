@@ -1,3 +1,0 @@
-srclist/instruction_decode_tb.srclist
-srclist/execution_tb.srclist
-tb/id_ex_tb.sv

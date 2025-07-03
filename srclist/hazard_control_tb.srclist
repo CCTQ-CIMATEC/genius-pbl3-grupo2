@@ -1,2 +1,2 @@
-rtl/hazard_control.sv
-tb/hazard_control_tb.sv
+${RISCV_RV32I}/rtl/hazard_control.sv
+${RISCV_RV32I}/tb/hazard_control_tb.sv
