@@ -28,6 +28,8 @@ package RISCV_test_list;
   `include "RISCV_and_test.sv" 
   `include "RISCV_beq_test.sv" 
   `include "RISCV_jal_test.sv" 
+  `include "RISCV_andi_test.sv" 
+  `include "RISCV_lui_test.sv" 
 
 endpackage 
 
