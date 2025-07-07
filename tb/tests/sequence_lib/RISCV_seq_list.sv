@@ -27,6 +27,8 @@ package RISCV_seq_list;
   `include "RISCV_add_seq.sv" 
   `include "RISCV_and_seq.sv" 
   `include "RISCV_addi_seq.sv"
+  `include "RISCV_sub_seq.sv" 
+  `include "RISCV_ori_seq.sv" 
   `include "RISCV_beq_seq.sv"
   `include "RISCV_jal_seq.sv"
   `include "RISCV_andi_seq.sv"
