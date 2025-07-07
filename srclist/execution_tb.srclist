@@ -1,6 +1,6 @@
-rtl/riscv_definitions.sv
-rtl/utils/mux2to1.sv
-rtl/execution/alu.sv
-rtl/execution/branch_unit.sv
-rtl/execution/execution.sv
-tb/execution/execution_tb.sv
+${RISCV_RV32I}/rtl/riscv_definitions.sv
+${RISCV_RV32I}/rtl/utils/mux2to1.sv
+${RISCV_RV32I}/rtl/execution/alu.sv
+${RISCV_RV32I}/rtl/execution/branch_unit.sv
+${RISCV_RV32I}/rtl/execution/execution.sv
+${RISCV_RV32I}/tb/execution/execution_tb.sv

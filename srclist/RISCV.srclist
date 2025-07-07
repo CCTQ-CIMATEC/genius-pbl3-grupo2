@@ -1,8 +1,8 @@
-srclist/instruction_fetch_tb.srclist
-srclist/instruction_decode_tb.srclist
-srclist/execution_tb.srclist
-srclist/memory_access_tb.srclist
-srclist/write_back_tb.srclist
-srclist/hazard_control_tb.srclist
-srclist/memory_tb.srclist
-rtl/RISCV.sv
+${RISCV_RV32I}/srclist/instruction_fetch_tb.srclist
+${RISCV_RV32I}/srclist/instruction_decode_tb.srclist
+${RISCV_RV32I}/srclist/execution_tb.srclist
+${RISCV_RV32I}/srclist/memory_access_tb.srclist
+${RISCV_RV32I}/srclist/write_back_tb.srclist
+${RISCV_RV32I}/srclist/hazard_control_tb.srclist
+${RISCV_RV32I}/srclist/memory_tb.srclist
+${RISCV_RV32I}/rtl/RISCV.sv

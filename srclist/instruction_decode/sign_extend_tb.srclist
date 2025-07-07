@@ -1,3 +1,3 @@
-rtl/riscv_definitions.sv
-rtl/sign_extend.sv
-tb/sign_extend_tb.sv
+${RISCV_RV32I}/rtl/riscv_definitions.sv
+${RISCV_RV32I}/rtl/sign_extend.sv
+${RISCV_RV32I}/tb/sign_extend_tb.sv
