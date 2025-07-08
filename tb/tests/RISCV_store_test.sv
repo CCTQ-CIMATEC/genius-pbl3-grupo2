@@ -16,7 +16,6 @@ class RISCV_store_test extends uvm_test;
    * Declare component utilities for the test-case
    */
   `uvm_component_utils(RISCV_store_test)
-  `uvm_component_utils(x_driver)
  
   RISCV_environment env;
   RISCV_store_seq   seq;

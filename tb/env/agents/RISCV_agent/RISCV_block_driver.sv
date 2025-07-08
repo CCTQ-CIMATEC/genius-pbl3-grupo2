@@ -63,11 +63,21 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
     // Wait for clock edge and ensure not in reset
     @(vif.dr_cb);
     
-    // Drive instruction to DUT
-    vif.dr_cb.instr_data <= req.instr_data;
-    vif.dr_cb.data_rd    <= req.data_rd;
+    foreach(req.instr_data[i]) begin
+      vif.dr_cb.instr_data <= req.instr_data[i];
+      vif.dr_cb.data_rd    <= req.data_rd[i];
+      @(vif.clk);
+      `uvm_info(get_full_name(), $sformatf("Driving instruction[%0d]: 0x%08h", i, req.instr_data[i]), UVM_HIGH);
+    end
     
-    `uvm_info(get_full_name(), $sformatf("Driving instr_data: 0x%08h", req.instr_data), UVM_HIGH);
+    foreach(req.instr_data[i]) begin
+      vif.dr_cb.instr_data <= 32'd0;
+      vif.dr_cb.data_rd    <= 32'd0;
+      @(vif.clk);
+      `uvm_info(get_full_name(), $sformatf("Driving instruction NOPs"), UVM_HIGH);
+    end
+
+
   endtask
 
   /*
