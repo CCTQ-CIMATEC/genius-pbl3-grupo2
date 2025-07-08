@@ -1,0 +1,97 @@
+[33m435397e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mriscv-uvm-leonardo[m[33m)[m ADD Ori and SUB UVM tests
+[33m5978cef[m[33m ([m[1;31morigin/riscv-uvm-leonardo[m[33m)[m Remove rand bits for values in the ADD, ADDI and AND sequence instructions
+[33mf9842c7[m fix load
+[33mf17c622[m Add addi uvm test
+[33mfcb1bfb[m Implement ADDI UVM test
+[33m395cd00[m Add UVM initial test for ADD and AND RISC-V instructions
+[33m42072d0[m get error when update load test
+[33m61db7e8[m Merge pull request #16 from CCTQ-CIMATEC/riscv-uvm-leonardo
+[33m9a787c4[m fix variable dont used
+[33m53c71cd[m revert some changes
+[33m28942c6[m Create a add UVM test structure
+[33mf5f47a6[m First commit
+[33m5938d89[m update submodule
+[33mcd75db3[m change name module project group1
+[33m91bc236[m Remove unused RTL files and link submodule RTL after update template configuration
+[33m4509911[m Add submodule back
+[33m89f4bd3[m Remove submodule
+[33md56612a[m Add submodule for genius-pbl3-grupo1 library
+[33m3b18fb0[m Merge pull request #15 from CCTQ-CIMATEC/riscv-uvm-load-versao2
+[33m40bb989[m[33m ([m[1;31morigin/riscv-uvm-load-versao2[m[33m)[m revert some changes
+[33m06513f6[m revert changes
+[33mad50133[m Atualizei o teste de LOAD (LW), validando leitura de memória e escrita em registrador. Pra isso fiz ajustes no monitor, scoreboard, reference model e listas de sequências/testes.
+[33m28112b0[m RISCV Load UVM Implementation
+[33m58c74ec[m store test
+[33m1731547[m more and more fixes
+[33m29a02fe[m some few fixes in store_seq
+[33m7c9b47e[m change rtl to verify
+[33m8b3b9df[m add grupo1 dut
+[33m6ea83d7[m Merge pull request #14 from CCTQ-CIMATEC/uvm-draft
+[33mbf248f4[m clear project
+[33m1a1eb8f[m more and more fixes
+[33ma5407f6[m a little fixes, a lot errors
+[33mf5dbb61[m ajusts in monitor and pkg agent
+[33m66609a9[m change context to RISCV
+[33m79e5b86[m create files for uvm test
+[33m9357025[m Merge pull request #13 from CCTQ-CIMATEC/angelo-uvm-ula-example
+[33m956b8b4[m Adiciona exemplo UVM: sim_1 e sources_1 para verificação ULA
+[33m5e4245d[m Merge pull request #12 from CCTQ-CIMATEC/riscv-connected
+[33m9e9aa0a[m removing warnings
+[33m0a8848c[m fix branch flux and data to write
+[33m52604b5[m fix for deadlock when reg_dest == reg_source
+[33mbfa8df8[m more fixes
+[33mf775cf5[m more fixes
+[33m504dfac[m instruction_fetch working
+[33m39f8b4b[m revert fixes
+[33m43ce79d[m more fixes
+[33m2d55988[m fix
+[33me6ecc29[m fixes in instruction_fetch
+[33m10bd35c[m fix in address memory
+[33m4a335cd[m Merge pull request #11 from CCTQ-CIMATEC/riscv-connected
+[33m50f03c8[m conect memory and run assembly code from harris
+[33m07efffc[m memory_init
+[33m8870286[m Merge pull request #10 from CCTQ-CIMATEC/riscv-connected
+[33m73cbb3d[m add testbench general
+[33m10b975f[m Merge pull request #9 from CCTQ-CIMATEC/riscv-connected
+[33m49e86a5[m Adding customizable waveform visualization
+[33me35d2c7[m RISCV full conected internal
+[33m111eeaa[m RISC-V compilable (not necessarily correct, but it's progress nonetheless)
+[33mbad60a6[m memory access na moralzinha
+[33m97081db[m init reworking memory access
+[33m3dcf16c[m Merge pull request #8 from CCTQ-CIMATEC/riscv-connected
+[33mdf584a8[m ajust in RISCV
+[33m68e97d6[m draft riscv
+[33mc5efc66[m Merge pull request #6 from HenriqueNTeixeira/feature-hazard-control
+[33m9af55ce[m Merge pull request #7 from CCTQ-CIMATEC/memory-acess2
+[33m4f3bc4a[m memory stage
+[33m6224517[m Merge pull request #5 from CCTQ-CIMATEC/execution
+[33m8b0ac98[m Adicionei o módulo hazard_control e seu testbench
+[33m582f073[m Merge branch 'main' of https://github.com/CCTQ-CIMATEC/Genius-PBL3-Grupo2 into execution
+[33mbddd62d[m Merge pull request #4 from gabriel1317/instruction-fetch
+[33m1b96ba7[m Adiciona módulo instruction_fetch, testbench e arquivo srclist
+[33mf872be0[m fix id_ex_tb layout
+[33mf181ef7[m init testing integration between decode and execute
+[33mbedbdb8[m organize files in folders
+[33m174787b[m update testbench execution_stage
+[33mbdfbf5c[m init execution module
+[33m7f5b91e[m alu and branch unit modules
+[33m4c7686e[m Merge pull request #1 from CCTQ-CIMATEC/feature-decode-instruction
+[33m15838ff[m Merge pull request #2 from HenriqueNTeixeira/feature-writeback
+[33m6466788[m Alteração de porta do i_ma_result com o i_ma_read_data
+[33m57c79b5[m update testbench
+[33m324081e[m decode test all instructions
+[33m17df757[m modulo write_back
+[33me588e01[m instruction lui, auipc, addi, xori, andi, slli, srli function in teory
+[33md9b5310[m decode stage
+[33mc75bec0[m add controller testbench
+[33m2ebb495[m init decode
+[33m1b9c3dc[m improve compare result in testbench of extend sign
+[33mecd2330[m fix extend module
+[33m35a474f[m add extend init code
+[33meedafe3[m draft init components
+[33me202630[m updates in diagram
+[33m5854d81[m remove clk and clk_en from wb stage
+[33md9144ec[m rename signals suggest by linton
+[33m169c056[m stages architecture
+[33mdfc0754[m init_configs
+[33m4dea6de[m Initial commit
