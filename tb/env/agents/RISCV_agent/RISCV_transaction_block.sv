@@ -46,6 +46,23 @@ class RISCV_transaction_block extends RISCV_transaction;
   function void post_randomize();
   endfunction 
 
+  function void unpack_transactions(ref RISCV_transaction transactions[$]);
+  RISCV_transaction single_tr;
+  for (int i = 0; i < instr_data.size(); i++) begin
+    single_tr = RISCV_transaction::type_id::create($sformatf("tr_%0d", i));
+    
+    single_tr.instr_data    = instr_data[i];
+    single_tr.data_rd       = data_rd[i];
+    single_tr.inst_addr     = inst_addr[i];
+    single_tr.data_wr       = data_wr[i];
+    single_tr.data_addr     = data_addr[i];
+    single_tr.data_wr_en_ma = data_wr_en_ma[i];
+    single_tr.instr_name    = instr_name[i];
+
+    transactions.push_back(single_tr);
+  end
+endfunction
+
 endclass
 
 `endif

@@ -63,7 +63,18 @@ class RISCV_ref_model extends uvm_component;
 
       // Wait for new transaction
       rm_exp_fifo.get(rm_trans);
-      process_instruction(rm_trans);
+
+      if(rm_trans.get_type_name() == "RISCV_transaction_block") begin
+        RISCV_transaction       tr_list[$];
+        rm_trans.unpack_transactions(tr_list);
+        foreach(tr_list[i]) begin
+          process_instruction(tr_list[i]);
+        end
+      end
+      else begin
+        process_instruction(rm_trans);
+      end
+
     end
   endtask
 
