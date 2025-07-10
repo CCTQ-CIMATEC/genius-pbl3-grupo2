@@ -24,7 +24,9 @@ package RISCV_agent_pkg;
   `include "RISCV_driver.sv"
   `include "RISCV_monitor.sv"
   `include "RISCV_agent.sv"
-
+  `include "RISCV_transaction_block.sv"
+  `include "RISCV_block_driver.sv"
+  `include "RISCV_block_monitor.sv"
 endpackage
 
 `endif
