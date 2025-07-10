@@ -8,12 +8,12 @@
 //------------------------------------------------------------------------------
 
 
-`ifndef RISCV_LOAD_SEQ
-`define RISCV_LOAD_SEQ
+`ifndef RISCV_LOAD_STORE_SEQ
+`define RISCV_LOAD_STORE_SEQ
 
 class RISCV_load_store_seq extends uvm_sequence#(RISCV_transaction_block);
 
-  `uvm_object_utils(RISCV_load_seq)
+  `uvm_object_utils(RISCV_load_store_seq)
 
 // Parâmetros para o número de instruções
 localparam int NUM_LOADS = 32;
@@ -36,7 +36,7 @@ localparam bit [2:0] LW_FUNCT3    = 3'b010;
 localparam bit [6:0] STORE_OPCODE = 7'b0100011;
 localparam bit [2:0] SW_FUNCT3    = 3'b010;
 
-  function new(string name = "RISCV_load_seq");
+  function new(string name = "RISCV_load_store_seq");
     super.new(name);
   endfunction
 

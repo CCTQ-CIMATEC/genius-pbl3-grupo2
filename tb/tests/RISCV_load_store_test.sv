@@ -7,15 +7,15 @@
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef RISCV_LOAD_TEST 
-`define RISCV_LOAD_TEST
+`ifndef RISCV_LOAD_STORE_TEST 
+`define RISCV_LOAD_STORE_TEST
 
 class RISCV_load_store_test extends uvm_test;
  
   /*
    * Declare component utilities for the test-case
    */
-  `uvm_component_utils(RISCV_load_test)
+  `uvm_component_utils(RISCV_load_store_test)
  
   RISCV_environment env;
   RISCV_load_seq   seq;
@@ -24,7 +24,7 @@ class RISCV_load_store_test extends uvm_test;
    * Constructor: new
    * Initializes the test with a given name and parent component.
    */
-  function new(string name = "RISCV_load_test", uvm_component parent = null);
+  function new(string name = "RISCV_load_store_test", uvm_component parent = null);
     super.new(name, parent);
   endfunction : new
  
@@ -51,6 +51,6 @@ class RISCV_load_store_test extends uvm_test;
     phase.drop_objection(this);
   endtask : run_phase
  
-endclass : RISCV_load_test
+endclass : RISCV_load_store_test
 
 `endif
