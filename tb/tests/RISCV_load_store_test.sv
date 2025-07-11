@@ -18,7 +18,7 @@ class RISCV_load_store_test extends uvm_test;
   `uvm_component_utils(RISCV_load_store_test)
  
   RISCV_environment env;
-  RISCV_load_seq   seq;
+  RISCV_load_store_seq   seq;
  
   /*
    * Constructor: new
