@@ -46,7 +46,12 @@ localparam bit [2:0] SW_FUNCT3    = 3'b010;
       req = RISCV_transaction_block::type_id::create("req");
       start_item(req);
 
-      if (!randomize(rs1, rd, imm, data_to_load)) begin
+      foreach (rd_loads[i]) begin
+        rd_loads[i] = i;
+        rs2_stores[i] = i;
+      end
+
+      if (!randomize(rs1_stores, imm_loads, data_to_load, rs1_stores, imm_stores )) begin
         `uvm_fatal(get_type_name(), "Randomization failed!");
       end
 

@@ -7,8 +7,8 @@
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef RISCV_DRIVER
-`define RISCV_DRIVER
+`ifndef RISCV_DRIVER_BLOCK
+`define RISCV_DRIVER_BLOCK
 
 class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
  

@@ -7,8 +7,8 @@
 // Date  : June 2025
 //------------------------------------------------------------------------------
 
-`ifndef RISCV_MONITOR
-`define RISCV_MONITOR
+`ifndef RISCV_MONITOR_BLOCK
+`define RISCV_MONITOR_BLOCK
 
 class RISCV_block_monitor extends uvm_monitor;
 
@@ -80,6 +80,6 @@ class RISCV_block_monitor extends uvm_monitor;
     end
   endtask : collect_outputs
 
-endclass : RISCV_monitor
+endclass : RISCV_block_monitor
 
 `endif
