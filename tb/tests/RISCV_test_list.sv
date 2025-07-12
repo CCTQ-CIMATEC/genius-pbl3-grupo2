@@ -34,6 +34,7 @@ package RISCV_test_list;
   `include "RISCV_andi_test.sv" 
   `include "RISCV_lui_test.sv" 
   `include "RISCV_auipc_test.sv"
+  `include "RISCV_slti_test.sv"
 
 endpackage 
 
