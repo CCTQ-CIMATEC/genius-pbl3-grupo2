@@ -30,6 +30,8 @@ package RISCV_test_list;
   `include "RISCV_sub_test.sv" 
   `include "RISCV_or_test.sv" 
   `include "RISCV_ori_test.sv" 
+  `include "RISCV_xor_test.sv"
+  `include "RISCV_xori_test.sv"
   `include "RISCV_beq_test.sv" 
   `include "RISCV_jal_test.sv" 
   `include "RISCV_andi_test.sv" 
