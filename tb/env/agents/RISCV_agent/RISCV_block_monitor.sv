@@ -10,76 +10,123 @@
 `ifndef RISCV_MONITOR_BLOCK
 `define RISCV_MONITOR_BLOCK
 
-class RISCV_block_monitor extends uvm_monitor;
+class RISCV_block_monitor extends RISCV_monitor;
 
   virtual RISCV_interface vif;
-  uvm_analysis_port #(RISCV_transaction) mon2sb_port;
 
-  RISCV_transaction transaction_queue[$];
+  // Buffer para entradas aguardando delay
+  RISCV_transaction input_buffer[$];
 
-  `uvm_component_utils(RISCV_monitor)
+  // Transação atual em construção
+  RISCV_transaction_block curr_block;
+  RISCV_transaction trans_input;
+  // Delay entre entrada e saída
+  int unsigned delay_cycles = 4;
+  int unsigned nop_count = 0;
+  bit flag_initied = 0;
+  int idx;
+
+  `uvm_component_utils(RISCV_block_monitor)
 
   function new (string name, uvm_component parent);
     super.new(name, parent);
-    mon2sb_port = new("mon2sb_port", this);
-  endfunction : new
+  endfunction
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     if (!uvm_config_db#(virtual RISCV_interface)::get(this, "", "intf", vif))
       `uvm_fatal("NOVIF", {"Virtual interface must be set for: ", get_full_name(), ".vif"});
-  endfunction : build_phase
+  endfunction
 
   virtual task run_phase(uvm_phase phase);
-    // Aguarda sair do reset uma vez
     wait(vif.reset);
     repeat(1) @(posedge vif.clk);
+
+    // Inicializa bloco atual
+    curr_block = RISCV_transaction_block::type_id::create("curr_block");
+
     forever begin
-      collect_inputs();   // Coleta entradas (instruções)
-      collect_outputs();  // Coleta saídas (resultados)
+      collect_input();
+      collect_output_if_ready();
     end
-  endtask : run_phase
+  endtask
 
-  task collect_inputs();
-    RISCV_transaction act_trans;
-
-    // Aguarda uma borda de clock antes de capturar
+  // Captura a entrada (instr_data + data_rd)
+  task collect_input();
     @(posedge vif.clk);
-    
     if (vif.reset) begin
-        act_trans = RISCV_transaction::type_id::create("act_trans", this);
-        
-        // Captura apenas as entradas
-        act_trans.instr_data = vif.instr_data;
-        act_trans.data_rd = vif.data_rd;
-        
-        // Adiciona à fila para processamento posterior
-        transaction_queue.push_back(act_trans);
+      if(vif.instr_data != 32'h0)begin
+        flag_initied = 1;
 
-        `uvm_info(get_full_name(), $sformatf("Input captured: instr=0x%08h", act_trans.instr_data), UVM_LOW);
+        trans_input = RISCV_transaction::type_id::create("input_trans");
+        trans_input.instr_data = vif.instr_data;;
+        trans_input.data_rd    = vif.data_rd;
+
+        input_buffer.push_back(trans_input);
       end
-  endtask : collect_inputs
-
-  task collect_outputs();
-    RISCV_transaction complete_trans;
-    if (vif.reset && vif.instr_data != 0) begin
-       repeat(4) @(posedge vif.clk);
-
-        complete_trans = transaction_queue.pop_front();
-
-        complete_trans.inst_addr = vif.inst_addr;
-        complete_trans.data_wr = vif.data_wr;
-        complete_trans.data_addr = vif.data_addr;
-        complete_trans.data_wr_en_ma = vif.data_wr_en_ma;
-        
-        `uvm_info(get_full_name(), $sformatf("Monitor captured complete transaction"), UVM_LOW);
-        complete_trans.print();
-        
-        // Envia para o scoreboard
-        mon2sb_port.write(complete_trans);
+      else if(flag_initied) begin 
+        if (vif.instr_data == 32'h0) begin//NOP verification
+          nop_count++;
+        end else begin
+          nop_count = 0;
+        end
+      end
+      
+      `uvm_info(get_full_name(), $sformatf("Captured input: 0x%08h", vif.instr_data), UVM_LOW);
     end
-  endtask : collect_outputs
+  endtask
 
-endclass : RISCV_block_monitor
+  // Processa saída após delay e completa a transação atual
+  task collect_output_if_ready();
+    if (input_buffer.size() >= delay_cycles) begin
+      RISCV_transaction ready_trans = input_buffer.pop_front();
+
+      // Aguarda delay
+      repeat(delay_cycles) @(posedge vif.clk);
+
+      // Captura sinais de saída
+      ready_trans.inst_addr     = vif.inst_addr;
+      ready_trans.data_wr       = vif.data_wr;
+      ready_trans.data_addr     = vif.data_addr;
+      ready_trans.data_wr_en_ma = vif.data_wr_en_ma;
+
+      idx = curr_block.instr_data.size();
+
+      curr_block.instr_data = new[idx + 1](curr_block.instr_data);
+      curr_block.instr_data[idx] = ready_trans.instr_data;
+
+      curr_block.data_rd = new[idx + 1](curr_block.data_rd);
+      curr_block.data_rd[idx] = ready_trans.data_rd;
+
+      curr_block.inst_addr = new[idx + 1](curr_block.inst_addr);
+      curr_block.inst_addr[idx] = ready_trans.inst_addr;
+
+      curr_block.data_wr = new[idx + 1](curr_block.data_wr);
+      curr_block.data_wr[idx] = ready_trans.data_wr;
+
+      curr_block.data_addr = new[idx + 1](curr_block.data_addr);
+      curr_block.data_addr[idx] = ready_trans.data_addr;
+
+      curr_block.data_wr_en_ma = new[idx + 1](curr_block.data_wr_en_ma);
+      curr_block.data_wr_en_ma[idx] = ready_trans.data_wr_en_ma;
+
+      curr_block.instr_name = new[idx + 1](curr_block.instr_name);
+      curr_block.instr_name[idx] = ""; // ou ready_trans.instr_name
+
+      // Se detectou 5 NOPs seguidos, finalize a transação
+      if (nop_count >= 5) begin
+        `uvm_info(get_full_name(), "Block complete. Sending RISCV_transaction_block.", UVM_LOW);
+        curr_block.print();
+        super.mon2sb_port.write(curr_block);
+
+        // Reinicia para próximo bloco
+        curr_block = RISCV_transaction_block::type_id::create("curr_block");
+        nop_count = 0;
+        flag_initied = 0;
+      end
+    end
+  endtask
+
+endclass
 
 `endif

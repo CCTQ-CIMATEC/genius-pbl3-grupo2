@@ -15,8 +15,7 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
   RISCV_transaction trans;
   virtual RISCV_interface vif;
 
-  `uvm_component_utils(RISCV_driver)
-  uvm_analysis_port#(RISCV_transaction) drv2rm_port;
+  `uvm_component_utils(RISCV_block_driver)
 
   function new (string name, uvm_component parent);
     super.new(name, parent);
@@ -26,7 +25,6 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
     super.build_phase(phase);
     if (!uvm_config_db#(virtual RISCV_interface)::get(this, "", "intf", vif))
       `uvm_fatal("NO_VIF", {"Virtual interface must be set for: ", get_full_name(), ".vif"});
-    drv2rm_port = new("drv2rm_port", this);
   endfunction
 
   virtual task run_phase(uvm_phase phase);
@@ -46,7 +44,7 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
       // Create response and send to analysis port
       $cast(rsp, req.clone());
       rsp.set_id_info(req);
-      drv2rm_port.write(rsp);
+      super.drv2rm_port.write(rsp);
       
       // Signal completion to sequencer
       seq_item_port.item_done();
@@ -70,11 +68,11 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
       `uvm_info(get_full_name(), $sformatf("Driving instruction[%0d]: 0x%08h", i, req.instr_data[i]), UVM_HIGH);
     end
     
-    foreach(req.instr_data[i]) begin
+    for (int i = 0; i < 5; i++) begin
       vif.dr_cb.instr_data <= 32'd0;
       vif.dr_cb.data_rd    <= 32'd0;
       @(vif.clk);
-      `uvm_info(get_full_name(), $sformatf("Driving instruction NOPs"), UVM_HIGH);
+      `uvm_info(get_full_name(), $sformatf("Driving instruction NOP[%0d]: 0x00000000", i), UVM_HIGH);
     end
 
 
