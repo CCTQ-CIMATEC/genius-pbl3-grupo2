@@ -12,7 +12,7 @@
 
 class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
  
-  RISCV_transaction trans;
+  RISCV_transaction       tr_list[$];
   virtual RISCV_interface vif;
 
   `uvm_component_utils(RISCV_block_driver)
@@ -41,10 +41,7 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
       `uvm_info(get_full_name(), $sformatf("Drove instruction: %s", req.instr_name), UVM_LOW);
       req.print();
       
-      // Create response and send to analysis port
-      $cast(rsp, req.clone());
-      rsp.set_id_info(req);
-      super.drv2rm_port.write(rsp);
+      
       
       // Signal completion to sequencer
       seq_item_port.item_done();
@@ -60,10 +57,18 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
   task drive();
     // Wait for clock edge and ensure not in reset
     @(vif.dr_cb);
-    
-    foreach(req.instr_data[i]) begin
-      vif.dr_cb.instr_data <= req.instr_data[i];
-      vif.dr_cb.data_rd    <= req.data_rd[i];
+
+      
+      req.unpack_transactions(tr_list);
+
+    foreach(tr_list[i]) begin
+      vif.dr_cb.instr_data <= tr_list[i].instr_data;
+      vif.dr_cb.data_rd    <= tr_list[i].data_rd;
+
+      $cast(rsp, tr_list[i].clone());
+      rsp.set_id_info(req);
+      
+      super.drv2rm_port.write(rsp);
       @(vif.clk);
       `uvm_info(get_full_name(), $sformatf("Driving instruction[%0d]: 0x%08h", i, req.instr_data[i]), UVM_HIGH);
     end
