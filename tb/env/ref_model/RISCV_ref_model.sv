@@ -121,6 +121,7 @@ class RISCV_ref_model extends uvm_component;
     end
 
     exp_trans.inst_addr = pc;
+    exp_trans.instr_data = rm_trans.instr_data;
 
   endtask
 
