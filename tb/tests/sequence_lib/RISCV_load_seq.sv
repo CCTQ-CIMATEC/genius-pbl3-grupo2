@@ -21,6 +21,9 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
   rand bit [11:0] imm;
   rand bit [31:0] data_to_load;
   rand int unsigned load_type;
+  bit [2:0] funct3;
+
+  string instr_name;
 
   // Constantes
   localparam bit [6:0] LOAD_OPCODE = 7'b0000011;
@@ -44,8 +47,6 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
         `uvm_fatal(get_type_name(), "Randomization failed!");
       end
 
-      bit [2:0] funct3;
-      string instr_name;
 
       if (load_type == 0) begin
         funct3 = LB_FUNCT3;

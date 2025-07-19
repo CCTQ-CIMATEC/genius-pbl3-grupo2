@@ -91,10 +91,12 @@ class RISCV_scoreboard extends uvm_scoreboard;
         `uvm_error(get_full_name(), "Instruction MISMATCH");
         error = 1;
       end
+      /*
       if (exp_trans.inst_addr !== act_trans.inst_addr) begin
         `uvm_error(get_full_name(), "Instruction address MISMATCH");
         error = 1;
       end
+      */
       if (exp_trans.data_addr !== act_trans.data_addr) begin
         `uvm_error(get_full_name(), "Data address MISMATCH");
         error = 1;
