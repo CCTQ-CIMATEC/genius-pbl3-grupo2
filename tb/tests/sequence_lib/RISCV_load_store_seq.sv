@@ -104,13 +104,8 @@ localparam bit [2:0] SW_FUNCT3    = 3'b010;
                                            rs1_stores[i]);
     end
 
-    foreach(req.instr_name[i]) begin
-      `uvm_info(get_full_name(), 
-               $sformatf("Instruction [%0d/%0d]: %s", 
-                        i+1, 
-                        BLOCK_SIZE, 
-                        req.instr_name[i]), 
-               UVM_LOW)
+    foreach (req.instr_name[i]) begin
+      $display("%0d =>  instr_data = %08h |  instr_name = %s", i, req.instr_data[i], req.instr_name[i]);
     end
 
     finish_item(req);
