@@ -73,9 +73,6 @@ class RISCV_block_monitor extends RISCV_monitor;
         
         // Envia para o scoreboard
         super.mon2sb_port.write(complete_trans);
-      
-
-        
     end
   endtask : collect_outputs
 

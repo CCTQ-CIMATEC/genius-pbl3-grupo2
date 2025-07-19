@@ -62,15 +62,17 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
     req.unpack_transactions(tr_list);
 
     foreach(tr_list[i]) begin
-      vif.dr_cb.instr_data <= tr_list[i].instr_data;
-      vif.dr_cb.data_rd    <= tr_list[i].data_rd;
+    
+    `uvm_info(get_full_name(), $sformatf("Driving instruction[%0d]: 0x%08h", i, tr_list[i].instr_data), UVM_LOW);
+      vif.instr_data <= tr_list[i].instr_data;
+      vif.data_rd    <= tr_list[i].data_rd;
 
       $cast(rsp, tr_list[i].clone());
       rsp.set_id_info(req);
       
       super.drv2rm_port.write(rsp);
-      @(vif.clk);
-      `uvm_info(get_full_name(), $sformatf("Driving instruction[%0d]: 0x%08h", i, req.instr_data[i]), UVM_HIGH);
+      @(vif.dr_cb);
+      
     end
     
     for (int i = 0; i < 5; i++) begin
