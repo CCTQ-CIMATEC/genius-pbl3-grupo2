@@ -28,7 +28,7 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
   endfunction
 
   virtual task run_phase(uvm_phase phase);
-    reset();
+    //reset();
     wait(vif.reset);
     
     forever begin
@@ -59,7 +59,7 @@ class RISCV_block_driver extends RISCV_driver #(RISCV_transaction);
     @(vif.dr_cb);
 
       
-      req.unpack_transactions(tr_list);
+    req.unpack_transactions(tr_list);
 
     foreach(tr_list[i]) begin
       vif.dr_cb.instr_data <= tr_list[i].instr_data;

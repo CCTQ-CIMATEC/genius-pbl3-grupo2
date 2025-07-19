@@ -32,16 +32,16 @@ class RISCV_block_monitor extends RISCV_monitor;
     // Aguarda sair do reset uma vez
     wait(vif.reset);
     forever begin
+      @(vif.rc_cb);
       collect_inputs();   // Coleta entradas (instruções)
       collect_outputs();  // Coleta saídas (resultados)
-      @(posedge vif.clk);
     end
   endtask : run_phase
 
   task collect_inputs();
     RISCV_transaction act_trans;
     
-    if (vif.reset && vif.instr_data != 0) begin
+    if (vif.reset) begin
         act_trans = RISCV_transaction::type_id::create("act_trans", this);
         
         // Captura apenas as entradas
@@ -60,7 +60,7 @@ class RISCV_block_monitor extends RISCV_monitor;
 
   task collect_outputs();
     RISCV_transaction complete_trans;
-    if (vif.reset && vif.instr_data != 0) begin
+    if (vif.reset) begin
         complete_trans = transaction_queue.pop_front();
 
         complete_trans.inst_addr = vif.inst_addr;
