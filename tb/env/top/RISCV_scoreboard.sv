@@ -88,23 +88,23 @@ class RISCV_scoreboard extends uvm_scoreboard;
       `uvm_info(get_full_name(), $sformatf("Expected write enable = %0b | Actual write enable = %0b", exp_trans.data_wr_en_ma, act_trans.data_wr_en_ma), UVM_LOW);
 
       if (exp_trans.instr_data !== act_trans.instr_data) begin
-        `uvm_error(get_full_name(), "Instruction MISMATCH");
+        `uvm_fatal(get_full_name(), "Instruction MISMATCH");
         error = 1;
       end
       if (exp_trans.inst_addr !== act_trans.inst_addr) begin
-        `uvm_error(get_full_name(), "Instruction address MISMATCH");
+        `uvm_fatal(get_full_name(), "Instruction address MISMATCH");
         error = 1;
       end
       if (exp_trans.data_addr !== act_trans.data_addr) begin
-        `uvm_error(get_full_name(), "Data address MISMATCH");
+        `uvm_fatal(get_full_name(), "Data address MISMATCH");
         error = 1;
       end
       if (exp_trans.data_wr !== act_trans.data_wr) begin
-        `uvm_error(get_full_name(), "Data write MISMATCH");
+        `uvm_fatal(get_full_name(), "Data write MISMATCH");
         error = 1;
       end
       if (exp_trans.data_wr_en_ma !== act_trans.data_wr_en_ma) begin
-        `uvm_error(get_full_name(), "Data write enable MISMATCH");
+        `uvm_fatal(get_full_name(), "Data write enable MISMATCH");
         error = 1;
       end
     end

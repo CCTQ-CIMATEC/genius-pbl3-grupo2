@@ -11,247 +11,380 @@
 `define RISCV_REF_MODEL
 
 class RISCV_ref_model extends uvm_component;
-  `uvm_component_utils(RISCV_ref_model)
+    virtual RISCV_interface vif;
 
-  // Ports for input and output transactions
-  uvm_analysis_export#(RISCV_transaction)       rm_export;
-  uvm_analysis_port#(RISCV_transaction)         rm2sb_port;
-  uvm_tlm_analysis_fifo#(RISCV_transaction)     rm_exp_fifo;
+    `uvm_component_utils(RISCV_ref_model)
 
-  // Shadow register file (x0–x31), x0 is always zero
-  logic [31:0] regfile[32];
+    // Ports for input and output transactions
+    uvm_analysis_export#(RISCV_transaction)       rm_export;
+    uvm_analysis_port#(RISCV_transaction)         rm2sb_port;
+    uvm_tlm_analysis_fifo#(RISCV_transaction)     rm_exp_fifo;
 
-  // 5-stage pipeline to model writeback delay
-  wb_info_t writeback_queue[5];
+    // Shadow register file (x0-x31), x0 is always zero
+    logic [31:0] regfile[32];
+    
+    // Program Counter
+    bit [31:0] pc;
+    
+    // Pipeline registers
+    pipeline_reg_t if_id, id_ex, ex_mem, mem_wb;
+    
+    // Control signals
+    bit stall;
+    bit flush;
+    bit [31:0] next_pc;
 
-  // Internal transaction handles
-  RISCV_transaction rm_trans;
-  RISCV_transaction exp_trans;
+    // Internal transaction handles
+    RISCV_transaction rm_trans;
+    RISCV_transaction exp_trans;
 
-  function new(string name = "RISCV_ref_model", uvm_component parent);
-    super.new(name, parent);
-  endfunction
+    function new(string name = "RISCV_ref_model", uvm_component parent);
+        super.new(name, parent);
+    endfunction
 
-  function void build_phase(uvm_phase phase);
-    super.build_phase(phase);
-    rm_export    = new("rm_export", this);
-    rm2sb_port   = new("rm2sb_port", this);
-    rm_exp_fifo  = new("rm_exp_fifo", this);
+    function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        rm_export    = new("rm_export", this);
+        rm2sb_port   = new("rm2sb_port", this);
+        rm_exp_fifo  = new("rm_exp_fifo", this);
 
-    // Initialize register file and writeback pipeline
-    foreach (regfile[i]) regfile[i] = 32'h0;
-    foreach (writeback_queue[i]) writeback_queue[i] = '{rd: 0, value: 0, we: 0};
-  endfunction
+        if (!uvm_config_db#(virtual RISCV_interface)::get(this, "", "intf", vif)) begin
+            `uvm_fatal("NOVIF", {"Virtual interface must be set for: ", get_full_name(), ".vif"});
+        end
 
-  function void connect_phase(uvm_phase phase);
-    super.connect_phase(phase);
-    rm_export.connect(rm_exp_fifo.analysis_export);
-  endfunction
+        // Initialize register file and PC
+        foreach (regfile[i]) regfile[i] = 32'h0;
+        pc = 32'h0;
+        if_id = RESET_PIPELINE_REG;
+        id_ex = RESET_PIPELINE_REG;
+        ex_mem = RESET_PIPELINE_REG;
+        mem_wb = RESET_PIPELINE_REG;
+    endfunction
 
-  task run_phase(uvm_phase phase);
-    forever begin
-      // Apply writeback from the oldest entry in the pipeline
-      if (writeback_queue[0].we && writeback_queue[0].rd != 0) begin
-        regfile[writeback_queue[0].rd] = writeback_queue[0].value;
-      end
+    function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+        rm_export.connect(rm_exp_fifo.analysis_export);
+    endfunction
 
-      // Shift pipeline forward
-      for (int i = 0; i < 4; i++) begin
-        writeback_queue[i] = writeback_queue[i+1];
-      end
-      writeback_queue[4] = '{rd: 0, value: 0, we: 0};
+    task run_phase(uvm_phase phase);
+        forever begin
+            @(posedge vif.clk);
+            // Wait for new transaction
+            rm_exp_fifo.get(rm_trans);
+            exp_trans = RISCV_transaction::type_id::create("exp_trans");
 
-      // Wait for new transaction
-      rm_exp_fifo.get(rm_trans);
-      process_instruction(rm_trans);
-    end
-  endtask
+            fetch();
+            decode();
+            execute();
+            memory_access();
+            write_back();
+            
+            rm2sb_port.write(exp_trans);
+            pc = next_pc;
+        end
+    endtask
 
-  task automatic process_instruction(RISCV_transaction input_trans);
-    RISCV_transaction exp_trans_local;
-    opcodeType opcode;
-    aluOpType alu_op;
+    task fetch();
+        if (!stall) begin
+            if_id.valid = 1;
+            if_id.pc = pc;
+            if_id.instr = rm_trans.instr_data;
+            
+            // Default next PC is PC+4 unless overridden
+            next_pc = pc + 4;
+        end else begin
+            if_id.valid = 0; // Insert bubble
+        end
+        
+        if (flush) begin
+            if_id.valid = 0; // Flush pipeline
+            flush = 0;
+        end
 
-    bit [2:0]  funct3;
-    bit [6:0]  funct7;
-    bit [4:0]  reg1_addr;
-    bit [4:0]  reg2_addr;
-    bit [4:0]  reg_dest;
-    bit [31:0] rs1, rs2;
-    bit [31:0] imm;
-    bit [31:0] data_rd;
-    wb_info_t  wb;
+        exp_trans.inst_addr = next_pc;
+        exp_trans.instr_data = rm_trans.instr_data;
+    endtask
 
-    exp_trans_local = RISCV_transaction::type_id::create("exp_trans_local");
-    exp_trans_local.copy(input_trans);
+    task decode();
+        opcodeType opcode;
+        bit [2:0]  funct3;
+        bit [6:0]  funct7;
+        bit [4:0]  rs1;
+        bit [4:0]  rs2;
+        bit [4:0]  rd;
 
-    opcode     = opcodeType'(input_trans.instr_data[6:0]);
-    funct3     = input_trans.instr_data[14:12];
-    funct7     = input_trans.instr_data[31:25];
-    reg1_addr  = input_trans.instr_data[19:15];
-    reg2_addr  = input_trans.instr_data[24:20];
-    reg_dest   = input_trans.instr_data[11:7];
-    data_rd    = input_trans.data_rd;
+        if (!if_id.valid) begin
+            id_ex.valid = 0;
+            return;
+        end
 
-    rs1 = get_forwarded_value(reg1_addr);
-    rs2 = get_forwarded_value(reg2_addr);
+        opcode = opcodeType'(if_id.instr[6:0]);
+        funct3 = if_id.instr[14:12];
+        funct7 = if_id.instr[31:25];
+        rs1 = if_id.instr[19:15];
+        rs2 = if_id.instr[24:20];
+        rd  = if_id.instr[11:7];
 
-    wb = '{rd: 0, value: 0, we: 0};
+        id_ex.valid   = 1;
+        id_ex.pc      = if_id.pc;
+        id_ex.instr   = if_id.instr;
+        id_ex.rd      = rd;
+        id_ex.rs1_val = get_forwarded_value(rs1);
+        id_ex.rs2_val = get_forwarded_value(rs2);
+        id_ex.imm     = get_immediate(opcode, if_id.instr);
 
-    case (opcode)
-      LUI: begin
-        imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
-        exp_trans_local.data_addr = imm;
-        wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-      end
+        // Default control signals
+        id_ex.reg_write     = 0;
+        id_ex.mem_read      = 0;
+        id_ex.mem_write     = 0;
+        id_ex.branch_taken  = 0;
+        id_ex.jump          = 0;
+        id_ex.branch_target = 0;
+        id_ex.alu_src1      = 0; // 0: rs1, 1: pc
+        id_ex.alu_src2      = 0; // 0: rs2, 1: imm
+        id_ex.alu_opcode    = ALU_ADD;
 
-      AUIPC: begin
-        imm = get_sign_extend_result(IMM_U, input_trans.instr_data[31:7]);
-        exp_trans_local.data_addr = get_alu_result(ALU_ADD, exp_trans_local.inst_addr, imm);
-        exp_trans_local.data_wr   = imm;
-        wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-      end
+        case (opcode)
+            LUI: begin
+                id_ex.reg_write  = 1;
+                id_ex.alu_src1   = 1; // unused, but set to PC
+                id_ex.alu_src2   = 1; // use immediate
+                id_ex.alu_opcode = ALU_BPS2;
+            end
 
-      JAL: begin
-        imm = get_sign_extend_result(IMM_J, input_trans.instr_data[31:7]);
-        exp_trans_local.inst_addr = get_alu_result(ALU_ADD, input_trans.inst_addr, imm);
-        exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, rs2);
-        wb = '{rd: reg_dest, value: (input_trans.inst_addr + 4), we: 1};
-      end
+            AUIPC: begin
+                id_ex.reg_write  = 1;
+                id_ex.alu_src1   = 1; // PC
+                id_ex.alu_src2   = 1; // imm
+                id_ex.alu_opcode = ALU_ADD;
+            end
 
-      JALR: begin
-        imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
-        exp_trans_local.inst_addr = get_alu_result(ALU_ADD, rs1, imm);
-        exp_trans_local.data_addr = get_alu_result(ALU_ADD, rs1, rs2);
-        wb = '{rd: reg_dest, value: (input_trans.inst_addr + 4), we: 1};
-      end
+            JAL: begin
+                id_ex.reg_write     = 1;
+                id_ex.alu_src1      = 1; // PC
+                id_ex.alu_src2      = 1; // imm
+                id_ex.alu_opcode    = ALU_ADD;
+                id_ex.jump          = 1;
+                id_ex.branch_target = if_id.pc + id_ex.imm;
+            end
 
-      BRCH_S: begin
-        imm    = get_sign_extend_result(IMM_B, input_trans.instr_data[31:7]);
-        alu_op = ALU_EQUAL;
+            JALR: begin
+                id_ex.reg_write     = 1;
+                id_ex.alu_src1      = 0; // rs1
+                id_ex.alu_src2      = 1; // imm
+                id_ex.alu_opcode    = ALU_ADD;
+                id_ex.jump          = 1;
+                id_ex.branch_target = (id_ex.rs1_val + id_ex.imm) & ~1;
+            end
 
-        case (funct3)
-          3'b001: alu_op = ALU_NEQUAL;
-          3'b100: alu_op = ALU_LT;
-          3'b101: alu_op = ALU_GT;
-          3'b110: alu_op = ALU_LTU;
-          3'b111: alu_op = ALU_GTU;
+            BRCH_S: begin
+                id_ex.alu_src1      = 0;
+                id_ex.alu_src2      = 0;
+                id_ex.alu_opcode    = get_branch_alu_op(funct3);
+                id_ex.branch_taken  = 1;
+                id_ex.branch_target = if_id.pc + id_ex.imm;
+            end
+
+            LOAD_S: begin
+                id_ex.reg_write  = 1;
+                id_ex.mem_read   = 1;
+                id_ex.alu_src1   = 0; // rs1
+                id_ex.alu_src2   = 1; // imm
+                id_ex.alu_opcode = ALU_ADD;
+            end
+
+            STORE_S: begin
+                id_ex.mem_write  = 1;
+                id_ex.alu_src1   = 0;
+                id_ex.alu_src2   = 1;
+                id_ex.alu_opcode = ALU_ADD;
+            end
+
+            ALUI_S, ALU_S: begin
+                id_ex.reg_write  = 1;
+                id_ex.alu_src1   = 0;
+                id_ex.alu_opcode = get_alu_op(opcode, funct3, funct7);
+                id_ex.alu_src2   = opcode == ALUI_S;
+            end
         endcase
 
-        exp_trans_local.data_addr = get_alu_result(alu_op, rs1, rs2);
-        if (exp_trans_local.data_addr) begin
-          exp_trans_local.inst_addr = get_alu_result(ALU_ADD, input_trans.inst_addr, imm);
+        check_hazards();
+    endtask
+
+    task execute();
+        bit [31:0] alu_src1;
+        bit [31:0] alu_src2;
+
+        if (!id_ex.valid) begin
+            ex_mem.valid = 0;
+            return;
         end
-      end
 
-      LOAD_S: begin
-        imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
-        exp_trans_local.data_addr     = get_alu_result(ALU_ADD, rs1, imm);
-        exp_trans_local.data_wr_en_ma = 0;
-        exp_trans_local.data_wr       = rs2;
-        exp_trans_local.data_rd       = data_rd;
-        wb = '{rd: reg_dest, value: exp_trans_local.data_rd, we: 1};
-      end
+        // Source 1 selection
+        if (id_ex.alu_src1 == 1) begin
+            alu_src1 = id_ex.pc;
+        end else begin
+            alu_src1 = id_ex.rs1_val;
+        end
 
-      STORE_S: begin
-        imm = get_sign_extend_result(IMM_S, input_trans.instr_data[31:7]);
-        exp_trans_local.data_addr     = get_alu_result(ALU_ADD, rs1, imm);
-        exp_trans_local.data_wr       = rs2;
-        exp_trans_local.data_wr_en_ma = 1;
-      end
+        // Source 2 selection
+        if (id_ex.alu_src2 == 1) begin
+            alu_src2 = id_ex.imm;
+        end else begin
+            alu_src2 = id_ex.rs2_val;
+        end
 
-      ALUI_S: begin
-        imm = get_sign_extend_result(IMM_I, input_trans.instr_data[31:7]);
-        alu_op = ALU_ADD;
+        // ALU operation
+        ex_mem.alu_result = get_alu_result(id_ex.alu_opcode, alu_src1, alu_src2);
 
-        if (funct3 == 3'b001 || funct3 == 3'b101)
-          imm = get_sign_extend_result(IMM_IS, input_trans.instr_data[31:7]);
+        // Pass-through signals
+        ex_mem.valid         = 1;
+        ex_mem.pc            = id_ex.pc;
+        ex_mem.instr         = id_ex.instr;
+        ex_mem.rd            = id_ex.rd;
+        ex_mem.reg_write     = id_ex.reg_write;
+        ex_mem.mem_read      = id_ex.mem_read;
+        ex_mem.mem_write     = id_ex.mem_write;
+        ex_mem.rs2_val       = id_ex.rs2_val;
+        ex_mem.jump          = id_ex.jump;
+        ex_mem.branch_taken  = id_ex.branch_taken;
+        ex_mem.branch_target = id_ex.branch_target;
 
-        if (funct3 == 3'b101 && funct7[5])
-          alu_op = ALU_SRA;
-        else
-          alu_op = aluOpType'({1'b0, funct3});
+        // Handle branches
+        if (id_ex.jump || (id_ex.branch_taken && ex_mem.alu_result)) begin
+            next_pc = id_ex.branch_target;
+            flush = 1;
+        end
+    endtask
 
-        exp_trans_local.data_addr = get_alu_result(alu_op, rs1, imm);
-        wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-      end
+    task memory_access();
+        if (!ex_mem.valid) begin
+            mem_wb.valid = 0;
+            return;
+        end
+        
+        mem_wb.mem_data = rm_trans.data_rd;
+        
+        // Pass through signals
+        mem_wb.valid = 1;
+        mem_wb.pc = ex_mem.pc;
+        mem_wb.instr = ex_mem.instr;
+        mem_wb.rd = ex_mem.rd;
+        mem_wb.reg_write = ex_mem.reg_write;
+        mem_wb.alu_result = ex_mem.alu_result;
 
-      ALU_S: begin
-        if (funct3 == 3'b000 && funct7[5])
-          alu_op = ALU_SUB;
-        else if (funct3 == 3'b101 && funct7[5])
-          alu_op = ALU_SRA;
-        else
-          alu_op = aluOpType'({1'b0, funct3});
+        // Update expected transaction
+        exp_trans.data_wr = ex_mem.rs2_val;         
+        exp_trans.data_addr = ex_mem.alu_result;        
+        exp_trans.data_wr_en_ma = ex_mem.mem_write;   
+    endtask
 
-        exp_trans_local.data_addr = get_alu_result(alu_op, rs1, rs2);
-        wb = '{rd: reg_dest, value: exp_trans_local.data_addr, we: 1};
-      end
+    task write_back();
+        if (!mem_wb.valid) return;
+        
+        // Write back to register file
+        if (mem_wb.reg_write && mem_wb.rd != 0) begin
+            regfile[mem_wb.rd] = mem_wb.mem_read ? mem_wb.mem_data : mem_wb.alu_result;
+        end
+    endtask
 
-      default: begin
-        `uvm_warning(get_full_name(), $sformatf("Unsupported instruction: 0x%h", input_trans.instr_data))
-      end
-    endcase
+    function bit [31:0] get_immediate(opcodeType opcode, bit [31:0] instr);
+        case (opcode)
+            ALUI_S, LOAD_S, JALR:    return {{20{instr[31]}}, instr[31:20]};
+            STORE_S:                 return {{20{instr[31]}}, instr[31:25], instr[11:7]};
+            BRCH_S:                  return {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
+            LUI, AUIPC:              return {instr[31:12], 12'b0};
+            JAL:                     return {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+            default:                 return 32'h0;
+        endcase
+    endfunction
 
-    writeback_queue[4] = wb;
-    rm2sb_port.write(exp_trans_local);
-  endtask
+    task check_hazards();
+        bit [6:0] opcode = if_id.instr[6:0];
+        bit [4:0] rs1 = if_id.instr[19:15];
+        bit [4:0] rs2 = if_id.instr[24:20];
+        
+        // Data hazards
+        if (rs1 != 0 && ((id_ex.reg_write && id_ex.rd == rs1) || 
+                         (ex_mem.reg_write && ex_mem.rd == rs1) ||
+                         (mem_wb.reg_write && mem_wb.rd == rs1))) begin
+            stall = 1;
+        end else if ((rs2 != 0 && ((id_ex.reg_write && id_ex.rd == rs2) || 
+                                  (ex_mem.reg_write && ex_mem.rd == rs2) ||
+                                  (mem_wb.reg_write && mem_wb.rd == rs2)))) begin
+            stall = 1;
+        end else begin
+            stall = 0;
+        end
+        
+        // Control hazards (handled in execute stage)
+    endtask
 
-  function bit [31:0] get_forwarded_value(input bit [4:0] reg_addr);
-    if (reg_addr == 0) return 0;
+    function bit [31:0] get_forwarded_value(input bit [4:0] reg_addr);
+        if (reg_addr == 0) return 0;
 
-    // Check from the newest (index 4) to the oldest (index 1)
-    for (int i = 4; i >= 0; i--) begin
-      if (writeback_queue[i].we && (writeback_queue[i].rd == reg_addr)) begin
-        return writeback_queue[i].value;
-      end
-    end
+        // Forwarding from EX/MEM stage
+        if (ex_mem.reg_write && ex_mem.rd == reg_addr) begin
+            return ex_mem.alu_result;
+        end
+        
+        // Forwarding from MEM/WB stage
+        if (mem_wb.reg_write && mem_wb.rd == reg_addr) begin
+            return mem_wb.mem_read ? mem_wb.mem_data : mem_wb.alu_result;
+        end
+        
+        // Otherwise, return from register file
+        return regfile[reg_addr];
+    endfunction
 
-    // Otherwise, return from register file
-    return regfile[reg_addr];
-  endfunction
+    function aluOpType get_alu_op(input bit [6:0] opcode, input bit [2:0] funct3, input bit [6:0] funct7);
+        case (funct3)
+            3'b000: return (opcode == 7'b0110011 && funct7[5]) ? ALU_SUB : ALU_ADD;
+            3'b001: return ALU_SLL;
+            3'b010: return ALU_LT;
+            3'b011: return ALU_LTU;
+            3'b100: return ALU_XOR;
+            3'b101: return (funct7[5]) ? ALU_SRA : ALU_SRL;
+            3'b110: return ALU_OR;
+            3'b111: return ALU_AND;
+        endcase
+    endfunction
 
-  function bit [31:0] get_alu_result(
-    input aluOpType alu_op,
-    input bit [31:0] SrcA,
-    input bit [31:0] SrcB
-  );
-    bit [31:0] ALUResult = 0;
-    case (alu_op)
-      ALU_ADD   : ALUResult = $signed(SrcA) + $signed(SrcB);
-      ALU_SUB   : ALUResult = $signed(SrcA) - $signed(SrcB);
-      ALU_XOR   : ALUResult = SrcA ^ SrcB;
-      ALU_OR    : ALUResult = SrcA | SrcB;
-      ALU_AND   : ALUResult = SrcA & SrcB;
-      ALU_SLL   : ALUResult = SrcA << SrcB[4:0];
-      ALU_SRL   : ALUResult = SrcA >> SrcB[4:0];
-      ALU_SRA   : ALUResult = $signed(SrcA) >>> SrcB[4:0];
-      ALU_EQUAL : ALUResult = (SrcA == SrcB) ? 1 : 0;
-      ALU_NEQUAL: ALUResult = (SrcA != SrcB) ? 1 : 0;
-      ALU_LT    : ALUResult = ($signed(SrcA) < $signed(SrcB)) ? 1 : 0;
-      ALU_GT    : ALUResult = ($signed(SrcA) >= $signed(SrcB)) ? 1 : 0;
-      ALU_LTU   : ALUResult = (SrcA < SrcB) ? 1 : 0;
-      ALU_GTU   : ALUResult = (SrcA >= SrcB) ? 1 : 0;
-      ALU_BPS2  : ALUResult = SrcB;
-    endcase
-    return ALUResult;
-  endfunction
+    function aluOpType get_branch_alu_op(input bit [2:0] funct3);
+        case (funct3)
+            3'b000: return ALU_EQUAL;
+            3'b001: return ALU_NEQUAL;
+            3'b100: return ALU_LT;
+            3'b101: return ALU_GT;
+            3'b110: return ALU_LTU;
+            3'b111: return ALU_GTU;
+            default: return ALU_ADD;
+        endcase
+    endfunction
 
-  function bit [31:0] get_sign_extend_result(input imm_src_t i_imm_src, input [31:7] i_instr);
-    bit [31:0] o_imm_out = 32'b0;
-
-    case (i_imm_src)
-      IMM_I  : o_imm_out = {{20{i_instr[31]}}, i_instr[31:20]};
-      IMM_IS : o_imm_out = {{27{i_instr[31]}}, i_instr[24:20]};
-      IMM_S  : o_imm_out = {{20{i_instr[31]}}, i_instr[31:25], i_instr[11:7]};
-      IMM_B  : o_imm_out = {{20{i_instr[31]}}, i_instr[7], i_instr[30:25], i_instr[11:8], 1'b0};
-      IMM_U  : o_imm_out = {{20{i_instr[31]}}, i_instr[31:12]};
-      IMM_J  : o_imm_out = {{12{i_instr[31]}}, i_instr[19:12], i_instr[20], i_instr[30:21], 1'b0};
-    endcase
-
-    return o_imm_out;
-  endfunction
-
+    function bit [31:0] get_alu_result(
+        input aluOpType alu_op,
+        input bit [31:0] SrcA,
+        input bit [31:0] SrcB
+    );
+        case (alu_op)
+            ALU_ADD   : return $signed(SrcA) + $signed(SrcB);
+            ALU_SUB   : return $signed(SrcA) - $signed(SrcB);
+            ALU_XOR   : return SrcA ^ SrcB;
+            ALU_OR    : return SrcA | SrcB;
+            ALU_AND   : return SrcA & SrcB;
+            ALU_SLL   : return SrcA << SrcB[4:0];
+            ALU_SRL   : return SrcA >> SrcB[4:0];
+            ALU_SRA   : return $signed(SrcA) >>> SrcB[4:0];
+            ALU_EQUAL : return (SrcA == SrcB) ? 1 : 0;
+            ALU_NEQUAL: return (SrcA != SrcB) ? 1 : 0;
+            ALU_LT    : return ($signed(SrcA) < $signed(SrcB)) ? 1 : 0;
+            ALU_GT    : return ($signed(SrcA) >= $signed(SrcB)) ? 1 : 0;
+            ALU_LTU   : return (SrcA < SrcB) ? 1 : 0;
+            ALU_GTU   : return (SrcA >= SrcB) ? 1 : 0;
+            default   : return 0;
+        endcase
+    endfunction
 endclass
 
 `endif

@@ -43,10 +43,10 @@ interface RISCV_interface
   clocking rc_cb @(negedge clk);
     input instr_data;
     input data_rd;
-    input inst_addr; 
-    input data_wr;
-    input data_addr;
-    input data_wr_en_ma;
+    output inst_addr; 
+    output data_wr;
+    output data_addr;
+    output data_wr_en_ma;
   endclocking
 
   modport rcv (clocking rc_cb, input clk, reset);

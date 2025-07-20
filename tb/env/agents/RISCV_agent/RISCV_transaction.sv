@@ -46,6 +46,11 @@ class RISCV_transaction extends uvm_sequence_item;
   function void post_randomize();
   endfunction 
 
+
+  virtual function void unpack_transactions(ref RISCV_transaction transactions[$]);
+  
+endfunction
+
 endclass
 
 `endif

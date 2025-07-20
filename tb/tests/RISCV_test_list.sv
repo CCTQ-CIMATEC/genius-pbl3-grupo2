@@ -16,6 +16,7 @@ package RISCV_test_list;
   `include "uvm_macros.svh"
 
   import RISCV_env_pkg::*;
+  import RISCV_agent_pkg::*;
   import RISCV_seq_list::*;
 
   /*
@@ -32,6 +33,7 @@ package RISCV_test_list;
   `include "RISCV_jal_test.sv" 
   `include "RISCV_andi_test.sv" 
   `include "RISCV_lui_test.sv" 
+  `include "RISCV_load_store_test.sv"
 
 endpackage 
 
