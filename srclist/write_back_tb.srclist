@@ -1,3 +1,3 @@
-rtl/utils/mux2to1.sv
-rtl/write_back.sv
-tb/write_back_tb.sv
+${RISCV_RV32I}/rtl/utils/mux2to1.sv
+${RISCV_RV32I}/rtl/write_back.sv
+${RISCV_RV32I}/tb/write_back_tb.sv

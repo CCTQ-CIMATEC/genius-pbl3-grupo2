@@ -1,3 +1,3 @@
-rtl/rams_sp_wf.v
-rtl/memory.sv
-tb/memory_tb.sv
+${RISCV_RV32I}/rtl/rams_sp_wf.v
+${RISCV_RV32I}/rtl/memory.sv
+${RISCV_RV32I}/tb/memory_tb.sv
