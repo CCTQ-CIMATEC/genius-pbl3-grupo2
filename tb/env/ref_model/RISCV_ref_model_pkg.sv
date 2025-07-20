@@ -26,6 +26,8 @@ package RISCV_ref_model_pkg;
     bit          we;
   } wb_info_t;
 
+ 
+
   typedef enum logic [6:0] {
 
         // ------------------------------------------------------------
@@ -75,21 +77,6 @@ package RISCV_ref_model_pkg;
         ALU_S  = 7'b0110011   // ALU operations with registers (e.g., ADD, SUB, AND, OR, etc.)
 
     } opcodeType;
-
-    /*
-    Enum: imm_src_t
-    Description:
-         Encodes the type of immediate field to be used for sign-extension,
-         based on RISC-V instruction formats (I-type, S-type, B-type, J-type).
-    */
-        typedef enum logic [2:0] {
-            IMM_I = 3'b000,  // I-type immediate (e.g., ADDI, LW)
-            IMM_IS = 3'b001, //I-type - Shifts by constant are encoded as specialization of I-type
-            IMM_S = 3'b010,  // S-type immediate (e.g., SW)
-            IMM_B = 3'b011,  // B-type immediate (e.g., BEQ, BNE)
-            IMM_U = 3'b100,  // U-type immediate (e.g., LUI, AUIPC)
-            IMM_J = 3'b101   // J-type immediate (e.g., JAL)
-        } imm_src_t;
     
     /**
      * Enum: aluOpType
@@ -116,7 +103,49 @@ package RISCV_ref_model_pkg;
             ALU_GT     = 4'b1101, // Signed Greater/Equal than (>=)
             ALU_GTU    = 4'b1111  // Unsigned Greater/Equal than (>=)
         } aluOpType;
+
+         // Pipeline registers
+  typedef struct {
+    bit        valid;
+    bit [31:0] pc;
+    bit [31:0] instr;
+    bit [31:0] rs1_val;
+    bit [31:0] rs2_val;
+    bit [31:0] imm;
+    bit [4:0]  rd;
+    bit        reg_write;
+    bit [31:0] alu_result;
+    bit [31:0] mem_data;
+    bit        mem_read;
+    bit        mem_write;
+    bit        jump;
+    bit        alu_src1;
+    bit        alu_src2;
+    bit        branch_taken;
+    bit [31:0] branch_target;
+    aluOpType alu_opcode;
+  } pipeline_reg_t;
         
+  const pipeline_reg_t RESET_PIPELINE_REG = '{
+  valid: 0,
+  pc: 0,
+  instr: 0,
+  rs1_val: 0,
+  rs2_val: 0,
+  imm: 0,
+  rd: 0,
+  reg_write: 0,
+  alu_result: 0,
+  mem_data: 0,
+  mem_read: 0,
+  mem_write: 0,
+  jump: 0,
+  alu_src1: 0,
+  alu_src2: 0,
+  branch_taken: 0,
+  branch_target: 0,
+  alu_opcode: ALU_ADD  // valor default válido
+};
   `include "RISCV_ref_model.sv"
 
 endpackage

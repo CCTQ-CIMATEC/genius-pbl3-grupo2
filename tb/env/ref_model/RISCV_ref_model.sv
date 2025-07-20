@@ -27,24 +27,6 @@ class RISCV_ref_model extends uvm_component;
   // Program Counter
   bit [31:0] pc;
   
-  // Pipeline registers
-  typedef struct {
-    bit        valid;
-    bit [31:0] pc;
-    bit [31:0] instr;
-    bit [31:0] rs1_val;
-    bit [31:0] rs2_val;
-    bit [31:0] imm;
-    bit [4:0]  rd;
-    bit        reg_write;
-    bit [31:0] alu_result;
-    bit [31:0] mem_data;
-    bit        mem_read;
-    bit        mem_write;
-    bit        branch_taken;
-    bit [31:0] branch_target;
-  } pipeline_reg_t;
-  
   pipeline_reg_t if_id, id_ex, ex_mem, mem_wb;
   
   // Control signals
@@ -72,10 +54,10 @@ class RISCV_ref_model extends uvm_component;
     // Initialize register file and PC
     foreach (regfile[i]) regfile[i] = 32'h0;
     pc = 32'h0;
-    if_id = '{default:0};
-    id_ex = '{default:0};
-    ex_mem = '{default:0};
-    mem_wb = '{default:0};
+    if_id = RESET_PIPELINE_REG;
+    id_ex = RESET_PIPELINE_REG;
+    ex_mem = RESET_PIPELINE_REG;
+    mem_wb = RESET_PIPELINE_REG;
   endfunction
 
   function void connect_phase(uvm_phase phase);
@@ -126,171 +108,155 @@ class RISCV_ref_model extends uvm_component;
   endtask
 
   task decode();
-    bit [6:0] opcode;
-    bit [2:0] funct3;
-    bit [6:0] funct7;
-    bit [4:0] rs1, rs2, rd;
-    bit [31:0] imm;
-    
-    if (!if_id.valid) begin
-      id_ex.valid = 0;
-      return;
+  opcodeType opcode;
+  bit [2:0]  funct3;
+  bit [6:0]  funct7;
+  bit [4:0]  rs1;
+  bit [4:0]  rs2;
+  bit [4:0]  rd;
+
+  if (!if_id.valid) begin
+    id_ex.valid = 0;
+    return;
+  end
+
+  opcode = opcodeType'(if_id.instr[6:0]);
+  funct3 = if_id.instr[14:12];
+  funct7 = if_id.instr[31:25];
+  rs1 = if_id.instr[19:15];
+  rs2 = if_id.instr[24:20];
+  rd  = if_id.instr[11:7];
+
+  id_ex.valid   = 1;
+  id_ex.pc      = if_id.pc;
+  id_ex.instr   = if_id.instr;
+  id_ex.rd      = rd;
+  id_ex.rs1_val = get_forwarded_value(rs1);
+  id_ex.rs2_val = get_forwarded_value(rs2);
+  id_ex.imm     = get_immediate(opcode, if_id.instr);
+
+  // Default control signals
+  id_ex.reg_write     = 0;
+  id_ex.mem_read      = 0;
+  id_ex.mem_write     = 0;
+  id_ex.branch_taken  = 0;
+  id_ex.jump          = 0;
+  id_ex.branch_target = 0;
+  id_ex.alu_src1      = 0; // 0: rs1, 1: pc
+  id_ex.alu_src2      = 0; // 0: rs2, 1: imm
+  id_ex.alu_opcode    = ALU_ADD;
+
+  case (opcode)
+    LUI: begin
+      id_ex.reg_write  = 1;
+      id_ex.alu_src1   = 1; // unused, but set to PC
+      id_ex.alu_src2   = 1; // use immediate
+      id_ex.alu_opcode = ALU_BPS2;
     end
-    
-    opcode = if_id.instr[6:0];
-    funct3 = if_id.instr[14:12];
-    funct7 = if_id.instr[31:25];
-    rs1 = if_id.instr[19:15];
-    rs2 = if_id.instr[24:20];
-    rd = if_id.instr[11:7];
-    
-    // Immediate generation
-    case (opcode)
-      // I-type
-      7'b0010011, 7'b0000011, 7'b1100111: 
-        imm = {{20{if_id.instr[31]}}, if_id.instr[31:20]};
-      // S-type
-      7'b0100011: 
-        imm = {{20{if_id.instr[31]}}, if_id.instr[31:25], if_id.instr[11:7]};
-      // B-type
-      7'b1100011: 
-        imm = {{20{if_id.instr[31]}}, if_id.instr[7], if_id.instr[30:25], if_id.instr[11:8], 1'b0};
-      // U-type
-      7'b0110111, 7'b0010111: 
-        imm = {if_id.instr[31:12], 12'b0};
-      // J-type
-      7'b1101111: 
-        imm = {{12{if_id.instr[31]}}, if_id.instr[19:12], if_id.instr[20], if_id.instr[30:21], 1'b0};
-      default: imm = 0;
-    endcase
-    
-    // Register read with forwarding
-    id_ex.rs1_val = get_forwarded_value(rs1);
-    id_ex.rs2_val = get_forwarded_value(rs2);
-    
-    // Pass through signals
-    id_ex.valid = 1;
-    id_ex.pc = if_id.pc;
-    id_ex.instr = if_id.instr;
-    id_ex.imm = imm;
-    id_ex.rd = rd;
-    
-    // Default control signals
-    id_ex.reg_write = 0;
-    id_ex.mem_read = 0;
-    id_ex.mem_write = 0;
-    id_ex.branch_taken = 0;
-    id_ex.branch_target = 0;
-    
-    // Set control signals based on opcode
-    case (opcode)
-      // LUI, AUIPC
-      7'b0110111, 7'b0010111: id_ex.reg_write = 1;
-      // JAL
-      7'b1101111: begin
-        id_ex.reg_write = 1;
-        id_ex.branch_taken = 1;
-        id_ex.branch_target = if_id.pc + imm;
-      end
-      // JALR
-      7'b1100111: begin
-        id_ex.reg_write = 1;
-        id_ex.branch_taken = 1;
-        id_ex.branch_target = (get_forwarded_value(rs1) + imm) & ~1;
-      end
-      // Branch
-      7'b1100011: begin
-        id_ex.branch_taken = check_branch_condition(funct3, get_forwarded_value(rs1), get_forwarded_value(rs2));
-        id_ex.branch_target = if_id.pc + imm;
-      end
-      // Load
-      7'b0000011: begin
-        id_ex.reg_write = 1;
-        id_ex.mem_read = 1;
-      end
-      // Store
-      7'b0100011: id_ex.mem_write = 1;
-      // ALU ops
-      7'b0010011, 7'b0110011: id_ex.reg_write = 1;
-    endcase
-    
-    // Check for hazards
-    check_hazards();
-  endtask
+
+    AUIPC: begin
+      id_ex.reg_write  = 1;
+      id_ex.alu_src1   = 1; // PC
+      id_ex.alu_src2   = 1; // imm
+      id_ex.alu_opcode = ALU_ADD;
+    end
+
+    JAL: begin
+      id_ex.reg_write     = 1;
+      id_ex.alu_src1      = 1; // PC
+      id_ex.alu_src2      = 1; // imm
+      id_ex.alu_opcode    = ALU_ADD;
+      id_ex.jump          = 1;
+      id_ex.branch_target = if_id.pc + id_ex.imm;
+    end
+
+    JALR: begin
+      id_ex.reg_write     = 1;
+      id_ex.alu_src1      = 0; // rs1
+      id_ex.alu_src2      = 1; // imm
+      id_ex.alu_opcode    = ALU_ADD;
+      id_ex.jump          = 1;
+      id_ex.branch_target = (id_ex.rs1_val + id_ex.imm) & ~1;
+    end
+
+    BRCH_S: begin
+      id_ex.alu_src1      = 0;
+      id_ex.alu_src2      = 0;
+      id_ex.alu_opcode    = get_branch_alu_op(funct3);
+      id_ex.branch_taken  = 1;
+      id_ex.branch_target = if_id.pc + id_ex.imm;
+    end
+
+    LOAD_S: begin
+      id_ex.reg_write  = 1;
+      id_ex.mem_read   = 1;
+      id_ex.alu_src1   = 0; // rs1
+      id_ex.alu_src2   = 1; // imm
+      id_ex.alu_opcode = ALU_ADD;
+    end
+
+    STORE_S: begin
+      id_ex.mem_write  = 1;
+      id_ex.alu_src1   = 0;
+      id_ex.alu_src2   = 1;
+      id_ex.alu_opcode = ALU_ADD;
+    end
+
+    ALUI_S, ALU_S: begin
+      id_ex.reg_write  = 1;
+      id_ex.alu_src1   = 0;
+      id_ex.alu_opcode = get_alu_op(opcode, funct3, funct7);
+      id_ex.alu_src2   = opcode == ALUI_S;
+    end
+  endcase
+
+  check_hazards();
+endtask
 
   task execute();
-    bit [6:0] opcode;
-    bit [2:0] funct3;
-    bit [6:0] funct7;
-    bit [31:0] alu_src1, alu_src2;
-    aluOpType alu_op;
-    
-    if (!id_ex.valid) begin
-      ex_mem.valid = 0;
-      return;
-    end
-    
-    opcode = id_ex.instr[6:0];
-    funct3 = id_ex.instr[14:12];
-    funct7 = id_ex.instr[31:25];
-    
-    // ALU source selection
-    case (opcode)
-      // LUI
-      7'b0110111: alu_src1 = 0;
-      // AUIPC
-      7'b0010111: alu_src1 = id_ex.pc;
-      // JAL, JALR, Branches
-      7'b1101111, 7'b1100111, 7'b1100011: alu_src1 = id_ex.pc;
-      // ALU ops
-      default: alu_src1 = id_ex.rs1_val;
-    endcase
-    
-    case (opcode)
-      // Immediate ops
-      7'b0010011, 7'b0000011, 7'b1100111, 7'b0100011: alu_src2 = id_ex.imm;
-      // LUI, AUIPC
-      7'b0110111, 7'b0010111: alu_src2 = id_ex.imm;
-      // JAL, Branches
-      7'b1101111, 7'b1100011: alu_src2 = id_ex.imm;
-      // Register ops
-      default: alu_src2 = id_ex.rs2_val;
-    endcase
-    
-    // ALU operation selection
-    case (opcode)
-      // LUI, AUIPC, JAL, JALR, Load/Store
-      7'b0110111, 7'b0010111, 7'b1101111, 7'b1100111, 7'b0000011, 7'b0100011: 
-        alu_op = ALU_ADD;
-      // Branches
-      7'b1100011: 
-        alu_op = get_branch_alu_op(funct3);
-      // ALU ops
-      default: 
-        alu_op = get_alu_op(opcode, funct3, funct7);
-    endcase
-    
-    // Perform ALU operation
-    ex_mem.alu_result = get_alu_result(alu_op, alu_src1, alu_src2);
-    
-    // Pass through signals
-    ex_mem.valid = 1;
-    ex_mem.pc = id_ex.pc;
-    ex_mem.instr = id_ex.instr;
-    ex_mem.rd = id_ex.rd;
-    ex_mem.reg_write = id_ex.reg_write;
-    ex_mem.mem_read = id_ex.mem_read;
-    ex_mem.mem_write = id_ex.mem_write;
-    ex_mem.rs2_val = id_ex.rs2_val;
-    ex_mem.branch_taken = id_ex.branch_taken;
-    ex_mem.branch_target = id_ex.branch_target;
-    
-    // Handle branches
-    if (id_ex.branch_taken) begin
-      next_pc = id_ex.branch_target;
-      flush = 1;
-    end
-  endtask
+  bit [31:0] alu_src1;
+  bit [31:0] alu_src2;
+
+  if (!id_ex.valid) begin
+    ex_mem.valid = 0;
+    return;
+  end
+
+  
+
+  // Source 1 selection
+  if (id_ex.alu_src1 == 1)
+    alu_src1 = id_ex.pc;
+  else
+    alu_src1 = id_ex.rs1_val;
+
+  if (id_ex.alu_src2 == 1)
+    alu_src2 = id_ex.imm;
+  else
+    alu_src2 = id_ex.rs2_val;
+
+  // ALU operation
+  ex_mem.alu_result = get_alu_result(id_ex.alu_opcode, alu_src1, alu_src2);
+
+  // Pass-through signals
+  ex_mem.valid         = 1;
+  ex_mem.pc            = id_ex.pc;
+  ex_mem.instr         = id_ex.instr;
+  ex_mem.rd            = id_ex.rd;
+  ex_mem.reg_write     = id_ex.reg_write;
+  ex_mem.mem_read      = id_ex.mem_read;
+  ex_mem.mem_write     = id_ex.mem_write;
+  ex_mem.rs2_val       = id_ex.rs2_val;
+  ex_mem.jump          = id_ex.jump;
+  ex_mem.branch_taken  = id_ex.branch_taken;
+  ex_mem.branch_target = id_ex.branch_target;
+
+  // Handle branches
+  if (id_ex.jump || (id_ex.branch_taken && ex_mem.alu_result)) begin
+    next_pc = id_ex.branch_target;
+    flush = 1;
+  end
+endtask
 
   task memory_access();
     if (!ex_mem.valid) begin
@@ -323,6 +289,23 @@ class RISCV_ref_model extends uvm_component;
     end
     
   endtask
+
+function bit [31:0] get_immediate(opcodeType opcode, bit [31:0] instr);
+  case (opcode)
+    ALUI_S, LOAD_S, JALR:
+      return {{20{instr[31]}}, instr[31:20]};
+    STORE_S:
+      return {{20{instr[31]}}, instr[31:25], instr[11:7]};
+    BRCH_S:
+      return {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
+    LUI, AUIPC:
+      return {instr[31:12], 12'b0};
+    JAL:
+      return {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+    default:
+      return 32'h0;
+  endcase
+endfunction
 
   task check_hazards();
     bit [6:0] opcode = if_id.instr[6:0];
@@ -382,18 +365,6 @@ class RISCV_ref_model extends uvm_component;
       3'b110: return ALU_LTU;
       3'b111: return ALU_GTU;
       default: return ALU_ADD;
-    endcase
-  endfunction
-
-  function bit check_branch_condition(input bit [2:0] funct3, input bit [31:0] rs1, input bit [31:0] rs2);
-    case (funct3)
-      3'b000: return (rs1 == rs2);  // BEQ
-      3'b001: return (rs1 != rs2);  // BNE
-      3'b100: return ($signed(rs1) < $signed(rs2));  // BLT
-      3'b101: return ($signed(rs1) >= $signed(rs2)); // BGE
-      3'b110: return (rs1 < rs2);   // BLTU
-      3'b111: return (rs1 >= rs2);  // BGEU
-      default: return 0;
     endcase
   endfunction
 
