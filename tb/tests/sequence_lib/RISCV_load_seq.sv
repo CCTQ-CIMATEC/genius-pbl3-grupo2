@@ -76,7 +76,7 @@ class RISCV_load_seq extends uvm_sequence#(RISCV_transaction);
       req.instr_data = {
         imm,        // [31:20] immediate
         rs1,        // [19:15] base register
-        LW_FUNCT3,  // [14:12] funct3
+        funct3,  // [14:12] funct3
         rd,         // [11:7] destination register
         LOAD_OPCODE // [6:0] opcode
       };
