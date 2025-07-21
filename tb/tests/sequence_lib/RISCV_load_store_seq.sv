@@ -30,6 +30,8 @@ rand bit [4:0] rs1_stores[NUM_STORES];
 rand bit [4:0] rs2_stores[NUM_STORES];
 rand bit [11:0] imm_stores[NUM_STORES];
 
+bit [2:0] funct3;
+
 // Constantes fixas
 localparam bit [6:0] LOAD_OPCODE  = 7'b0000011;
 localparam bit [2:0] LW_FUNCT3    = 3'b010;
