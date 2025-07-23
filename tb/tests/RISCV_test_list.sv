@@ -40,6 +40,8 @@ package RISCV_test_list;
   `include "RISCV_auipc_test.sv"
   `include "RISCV_slti_test.sv"
   `include "RISCV_sll_test.sv"
+  `include "RISCV_srl_test.sv"
+  `include "RISCV_srli_test.sv"
 
 endpackage 
 
