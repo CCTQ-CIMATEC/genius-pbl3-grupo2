@@ -200,13 +200,22 @@ WriteBack wb_stage (
     .o_wb_data(wb_data)
 );
 
+opcodeType  opcode;
+
+assign  opcode         = opcodeType'(if_inst[6:0]);
+wire [4:0] if_reg_src2 = (
+    (opcode == ALU_S) || // Tipo R
+    (opcode == STORE_S) || // Tipo S (e.g., SW)
+    (opcode == BRCH_S)    // Tipo B (e.g., BEQ)
+) ? if_inst[24:20] : 5'd0;
+
 // ==== Hazard Control ====
 hazard_control hc (
     .clk(clk),
     .i_instr_ready(i_instr_ready),
     .i_data_ready(i_data_ready),
     .i_if_reg_src1(if_inst[19:15]),     // rs1 from instruction
-    .i_if_reg_src2(if_inst[24:20]),     // rs2 from instruction
+    .i_if_reg_src2(if_reg_src2),        // rs2 from instruction
     .i_id_reg_dest(id_reg_destination),
     .i_id_reg_wr(id_reg_wr),
     .i_ex_reg_dest(ex_reg_destination),
