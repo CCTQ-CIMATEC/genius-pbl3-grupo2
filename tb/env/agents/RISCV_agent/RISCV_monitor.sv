@@ -33,8 +33,8 @@ class RISCV_monitor extends uvm_monitor;
   virtual task run_phase(uvm_phase phase);
     // Aguarda sair do reset uma vez
     wait(vif.reset);
-    repeat(1) @(posedge vif.clk);
     forever begin
+      @(vif.rc_cb);
       collect_inputs();   // Coleta entradas (instruções)
       collect_outputs();  // Coleta saídas (resultados)
     end
@@ -42,11 +42,7 @@ class RISCV_monitor extends uvm_monitor;
 
   task collect_inputs();
     RISCV_transaction act_trans;
-
-    // Aguarda uma borda de clock antes de capturar
-    @(posedge vif.clk);
-    
-    if (vif.reset) begin
+    if (vif.reset & vif.instr_data != 0) begin
         act_trans = RISCV_transaction::type_id::create("act_trans", this);
         
         // Captura apenas as entradas
@@ -62,7 +58,7 @@ class RISCV_monitor extends uvm_monitor;
 
   task collect_outputs();
     RISCV_transaction complete_trans;
-    if (vif.reset && vif.instr_data != 0) begin
+    if (vif.reset && transaction_queue.size() > 0) begin
        repeat(4) @(posedge vif.clk);
 
         complete_trans = transaction_queue.pop_front();

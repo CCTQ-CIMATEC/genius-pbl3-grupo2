@@ -58,6 +58,7 @@ class RISCV_transaction_block extends RISCV_transaction;
     single_tr.data_addr     = data_addr[i];
     single_tr.data_wr_en_ma = data_wr_en_ma[i];
     single_tr.instr_name    = instr_name[i];
+    single_tr.inBurst       = 1'b1; // Default value, can be set later if needed
 
     transactions.push_back(single_tr);
   end

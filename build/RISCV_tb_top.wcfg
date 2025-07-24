@@ -19,12 +19,12 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="20.001 ns"></ZoomEndTime>
-      <Cursor1Time time="10.000 ns"></Cursor1Time>
+      <ZoomEndTime time="83.067 ns"></ZoomEndTime>
+      <Cursor1Time time="50.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="167"></NameColumnWidth>
-      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+      <NameColumnWidth column_width="168"></NameColumnWidth>
+      <ValueColumnWidth column_width="68"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="132" />
    <wvobject type="logic" fp_name="/RISCV_tb_top/clk">
@@ -71,13 +71,10 @@
          <obj_property name="ElementShortName">reset</obj_property>
          <obj_property name="ObjectShortName">reset</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/instr_data">
-         <obj_property name="ElementShortName">instr_data[31:0]</obj_property>
-         <obj_property name="ObjectShortName">instr_data[31:0]</obj_property>
-      </wvobject>
       <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/inst_addr">
          <obj_property name="ElementShortName">inst_addr[8:0]</obj_property>
          <obj_property name="ObjectShortName">inst_addr[8:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/data_rd">
          <obj_property name="ElementShortName">data_rd[31:0]</obj_property>
@@ -86,10 +83,6 @@
       <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/data_wr">
          <obj_property name="ElementShortName">data_wr[31:0]</obj_property>
          <obj_property name="ObjectShortName">data_wr[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/data_addr">
-         <obj_property name="ElementShortName">data_addr[7:0]</obj_property>
-         <obj_property name="ObjectShortName">data_addr[7:0]</obj_property>
       </wvobject>
       <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/data_wr_en_ma">
          <obj_property name="ElementShortName">data_wr_en_ma</obj_property>
@@ -107,12 +100,28 @@
          <obj_property name="ElementShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>
          <obj_property name="ObjectShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>
       </wvobject>
+      <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/instr_data">
+         <obj_property name="ElementShortName">instr_data[31:0]</obj_property>
+         <obj_property name="ObjectShortName">instr_data[31:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/data_addr">
+         <obj_property name="ElementShortName">data_addr[7:0]</obj_property>
+         <obj_property name="ObjectShortName">data_addr[7:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
       <wvobject type="group" fp_name="group336">
          <obj_property name="label">drive_cb</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/drv/clk">
+            <obj_property name="ElementShortName">clk</obj_property>
+            <obj_property name="ObjectShortName">clk</obj_property>
+         </wvobject>
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/dr_cb/instr_data">
             <obj_property name="ElementShortName">instr_data[31:0]</obj_property>
             <obj_property name="ObjectShortName">instr_data[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
          </wvobject>
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/dr_cb/data_rd">
             <obj_property name="ElementShortName">data_rd[31:0]</obj_property>
@@ -125,6 +134,7 @@
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/dr_cb/data_addr">
             <obj_property name="ElementShortName">data_addr[7:0]</obj_property>
             <obj_property name="ObjectShortName">data_addr[7:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
          </wvobject>
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/dr_cb/data_wr">
             <obj_property name="ElementShortName">data_wr[31:0]</obj_property>
@@ -133,20 +143,26 @@
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/dr_cb/inst_addr">
             <obj_property name="ElementShortName">inst_addr[8:0]</obj_property>
             <obj_property name="ObjectShortName">inst_addr[8:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
          <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/drv/reset">
             <obj_property name="ElementShortName">reset</obj_property>
             <obj_property name="ObjectShortName">reset</obj_property>
-         </wvobject>
-         <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/drv/clk">
-            <obj_property name="ElementShortName">clk</obj_property>
-            <obj_property name="ObjectShortName">clk</obj_property>
          </wvobject>
       </wvobject>
       <wvobject type="group" fp_name="group335">
          <obj_property name="label">reciver_cb</obj_property>
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="isExpanded"></obj_property>
+         <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/rc_cb/instr_data">
+            <obj_property name="ElementShortName">instr_data[31:0]</obj_property>
+            <obj_property name="ObjectShortName">instr_data[31:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
+         </wvobject>
+         <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/rcv/clk">
+            <obj_property name="ElementShortName">clk</obj_property>
+            <obj_property name="ObjectShortName">clk</obj_property>
+         </wvobject>
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/rc_cb/inst_addr">
             <obj_property name="ElementShortName">inst_addr[8:0]</obj_property>
             <obj_property name="ObjectShortName">inst_addr[8:0]</obj_property>
@@ -158,6 +174,7 @@
          <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/rc_cb/data_addr">
             <obj_property name="ElementShortName">data_addr[7:0]</obj_property>
             <obj_property name="ObjectShortName">data_addr[7:0]</obj_property>
+            <obj_property name="Radix">HEXRADIX</obj_property>
          </wvobject>
          <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/rc_cb/data_wr_en_ma">
             <obj_property name="ElementShortName">data_wr_en_ma</obj_property>
@@ -167,17 +184,9 @@
             <obj_property name="ElementShortName">data_rd[31:0]</obj_property>
             <obj_property name="ObjectShortName">data_rd[31:0]</obj_property>
          </wvobject>
-         <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/rc_cb/instr_data">
-            <obj_property name="ElementShortName">instr_data[31:0]</obj_property>
-            <obj_property name="ObjectShortName">instr_data[31:0]</obj_property>
-         </wvobject>
          <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/rcv/reset">
             <obj_property name="ElementShortName">reset</obj_property>
             <obj_property name="ObjectShortName">reset</obj_property>
-         </wvobject>
-         <wvobject type="logic" fp_name="/RISCV_tb_top/RISCV_intf/rcv/clk">
-            <obj_property name="ElementShortName">clk</obj_property>
-            <obj_property name="ObjectShortName">clk</obj_property>
          </wvobject>
       </wvobject>
    </wvobject>
@@ -883,10 +892,6 @@
       <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/u_decode_stage/u_regfile/ADDR_WIDTH">
          <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
          <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/u_decode_stage/u_regfile/Block119_347/i">
-         <obj_property name="ElementShortName">i[31:0]</obj_property>
-         <obj_property name="ObjectShortName">i[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/u_decode_stage/u_extend/i_instr">
          <obj_property name="ElementShortName">i_instr[31:7]</obj_property>

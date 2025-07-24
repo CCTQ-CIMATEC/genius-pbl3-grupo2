@@ -50,8 +50,12 @@ class RISCV_driver extends uvm_driver #(RISCV_transaction);
       
       // Signal completion to sequencer
       seq_item_port.item_done();
+
+      @(posedge vif.clk);
+      vif.dr_cb.instr_data <= 32'd0;
+      vif.dr_cb.data_rd    <= 32'd0;
+      repeat(3) @(posedge vif.clk);
       
-      repeat(4) @(posedge vif.clk); //await a little before send a new transactions
     end
   endtask
 
