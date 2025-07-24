@@ -28,11 +28,15 @@ class RISCV_ref_model extends uvm_component;
     
     // Pipeline registers
     pipeline_reg_t if_id, id_ex, ex_mem, mem_wb;
+    pipeline_reg_t next_if_id, next_id_ex, next_ex_mem, next_mem_wb;
     
     // Control signals
     bit stall;
     bit flush;
     bit [31:0] next_pc;
+
+    int reps;
+    int i;
 
     // Internal transaction handles
     RISCV_transaction rm_trans;
@@ -68,40 +72,62 @@ class RISCV_ref_model extends uvm_component;
 
     task run_phase(uvm_phase phase);
         forever begin
-            @(posedge vif.clk);
             // Wait for new transaction
             rm_exp_fifo.get(rm_trans);
             exp_trans = RISCV_transaction::type_id::create("exp_trans");
+            
+            reps = (rm_trans.inBurst == 0) ? 4 : 1;
+            i = 0;
 
-            fetch();
-            decode();
-            execute();
-            memory_access();
-            write_back();
+            do begin
+                write_back();
+                memory_access();
+                execute();
+                decode();
+                
+                // Primeiro atualiza os registros
+                if (i <= reps) begin
+                    @(posedge vif.clk);
+                    if_id   = next_if_id;
+                    id_ex   = next_id_ex;
+                    ex_mem  = next_ex_mem;
+                    mem_wb  = next_mem_wb;
+                    pc      = next_pc;
+            
+                    next_if_id.valid = 0;
+                    next_id_ex.valid = 0;
+                    next_ex_mem.valid = 0;
+                    next_mem_wb.valid = 0;
+                end
+                
+                // Depois executa o fetch para a próxima instrução
+                fetch();
+                
+                i++;
+            end while (i <= reps);
             
             rm2sb_port.write(exp_trans);
-            pc = next_pc;
         end
     endtask
 
     task fetch();
         if (!stall) begin
-            if_id.valid = 1;
-            if_id.pc = pc;
-            if_id.instr = rm_trans.instr_data;
+            next_if_id.valid = 1;
+            next_if_id.pc = pc;
+            next_if_id.instr = rm_trans.instr_data;
             
             // Default next PC is PC+4 unless overridden
             next_pc = pc + 4;
         end else begin
-            if_id.valid = 0; // Insert bubble
+            next_if_id.valid = 0; // Insert bubble
         end
         
         if (flush) begin
-            if_id.valid = 0; // Flush pipeline
+            next_if_id.valid = 0; // Flush pipeline
             flush = 0;
         end
 
-        exp_trans.inst_addr = next_pc;
+        exp_trans.inst_addr = next_if_id.pc;
         exp_trans.instr_data = rm_trans.instr_data;
     endtask
 
@@ -114,7 +140,7 @@ class RISCV_ref_model extends uvm_component;
         bit [4:0]  rd;
 
         if (!if_id.valid) begin
-            id_ex.valid = 0;
+            next_id_ex.valid = 0;
             return;
         end
 
@@ -125,86 +151,86 @@ class RISCV_ref_model extends uvm_component;
         rs2 = if_id.instr[24:20];
         rd  = if_id.instr[11:7];
 
-        id_ex.valid   = 1;
-        id_ex.pc      = if_id.pc;
-        id_ex.instr   = if_id.instr;
-        id_ex.rd      = rd;
-        id_ex.rs1_val = get_forwarded_value(rs1);
-        id_ex.rs2_val = get_forwarded_value(rs2);
-        id_ex.imm     = get_immediate(opcode, if_id.instr);
+        next_id_ex.valid   = 1;
+        next_id_ex.pc      = if_id.pc;
+        next_id_ex.instr   = if_id.instr;
+        next_id_ex.rd      = rd;
+        next_id_ex.rs1_val = get_forwarded_value(rs1);
+        next_id_ex.rs2_val = get_forwarded_value(rs2);
+        next_id_ex.imm     = get_immediate(opcode, if_id.instr);
 
         // Default control signals
-        id_ex.reg_write     = 0;
-        id_ex.mem_read      = 0;
-        id_ex.mem_write     = 0;
-        id_ex.branch_taken  = 0;
-        id_ex.jump          = 0;
-        id_ex.branch_target = 0;
-        id_ex.alu_src1      = 0; // 0: rs1, 1: pc
-        id_ex.alu_src2      = 0; // 0: rs2, 1: imm
-        id_ex.alu_opcode    = ALU_ADD;
+        next_id_ex.reg_write     = 0;
+        next_id_ex.mem_read      = 0;
+        next_id_ex.mem_write     = 0;
+        next_id_ex.branch_taken  = 0;
+        next_id_ex.jump          = 0;
+        next_id_ex.branch_target = 0;
+        next_id_ex.alu_src1      = 0; // 0: rs1, 1: pc
+        next_id_ex.alu_src2      = 0; // 0: rs2, 1: imm
+        next_id_ex.alu_opcode    = ALU_ADD;
 
         case (opcode)
             LUI: begin
-                id_ex.reg_write  = 1;
-                id_ex.alu_src1   = 1; // unused, but set to PC
-                id_ex.alu_src2   = 1; // use immediate
-                id_ex.alu_opcode = ALU_BPS2;
+                next_id_ex.reg_write  = 1;
+                next_id_ex.alu_src1   = 1; // unused, but set to PC
+                next_id_ex.alu_src2   = 1; // use immediate
+                next_id_ex.alu_opcode = ALU_BPS2;
             end
 
             AUIPC: begin
-                id_ex.reg_write  = 1;
-                id_ex.alu_src1   = 1; // PC
-                id_ex.alu_src2   = 1; // imm
-                id_ex.alu_opcode = ALU_ADD;
+                next_id_ex.reg_write  = 1;
+                next_id_ex.alu_src1   = 1; // PC
+                next_id_ex.alu_src2   = 1; // imm
+                next_id_ex.alu_opcode = ALU_ADD;
             end
 
             JAL: begin
-                id_ex.reg_write     = 1;
-                id_ex.alu_src1      = 1; // PC
-                id_ex.alu_src2      = 1; // imm
-                id_ex.alu_opcode    = ALU_ADD;
-                id_ex.jump          = 1;
-                id_ex.branch_target = if_id.pc + id_ex.imm;
+                next_id_ex.reg_write     = 1;
+                next_id_ex.alu_src1      = 1; // PC
+                next_id_ex.alu_src2      = 1; // imm
+                next_id_ex.alu_opcode    = ALU_ADD;
+                next_id_ex.jump          = 1;
+                next_id_ex.branch_target = if_id.pc + next_id_ex.imm;
             end
 
             JALR: begin
-                id_ex.reg_write     = 1;
-                id_ex.alu_src1      = 0; // rs1
-                id_ex.alu_src2      = 1; // imm
-                id_ex.alu_opcode    = ALU_ADD;
-                id_ex.jump          = 1;
-                id_ex.branch_target = (id_ex.rs1_val + id_ex.imm) & ~1;
+                next_id_ex.reg_write     = 1;
+                next_id_ex.alu_src1      = 0; // rs1
+                next_id_ex.alu_src2      = 1; // imm
+                next_id_ex.alu_opcode    = ALU_ADD;
+                next_id_ex.jump          = 1;
+                next_id_ex.branch_target = (next_id_ex.rs1_val + next_id_ex.imm) & ~1;
             end
 
             BRCH_S: begin
-                id_ex.alu_src1      = 0;
-                id_ex.alu_src2      = 0;
-                id_ex.alu_opcode    = get_branch_alu_op(funct3);
-                id_ex.branch_taken  = 1;
-                id_ex.branch_target = if_id.pc + id_ex.imm;
+                next_id_ex.alu_src1      = 0;
+                next_id_ex.alu_src2      = 0;
+                next_id_ex.alu_opcode    = get_branch_alu_op(funct3);
+                next_id_ex.branch_taken  = 1;
+                next_id_ex.branch_target = if_id.pc + next_id_ex.imm;
             end
 
             LOAD_S: begin
-                id_ex.reg_write  = 1;
-                id_ex.mem_read   = 1;
-                id_ex.alu_src1   = 0; // rs1
-                id_ex.alu_src2   = 1; // imm
-                id_ex.alu_opcode = ALU_ADD;
+                next_id_ex.reg_write  = 1;
+                next_id_ex.mem_read   = 1;
+                next_id_ex.alu_src1   = 0; // rs1
+                next_id_ex.alu_src2   = 1; // imm
+                next_id_ex.alu_opcode = ALU_ADD;
             end
 
             STORE_S: begin
-                id_ex.mem_write  = 1;
-                id_ex.alu_src1   = 0;
-                id_ex.alu_src2   = 1;
-                id_ex.alu_opcode = ALU_ADD;
+                next_id_ex.mem_write  = 1;
+                next_id_ex.alu_src1   = 0;
+                next_id_ex.alu_src2   = 1;
+                next_id_ex.alu_opcode = ALU_ADD;
             end
 
             ALUI_S, ALU_S: begin
-                id_ex.reg_write  = 1;
-                id_ex.alu_src1   = 0;
-                id_ex.alu_opcode = get_alu_op(opcode, funct3, funct7);
-                id_ex.alu_src2   = opcode == ALUI_S;
+                next_id_ex.reg_write  = 1;
+                next_id_ex.alu_src1   = 0;
+                next_id_ex.alu_opcode = get_alu_op(opcode, funct3, funct7);
+                next_id_ex.alu_src2   = opcode == ALUI_S;
             end
         endcase
 
@@ -235,23 +261,22 @@ class RISCV_ref_model extends uvm_component;
         end
 
         // ALU operation
-        ex_mem.alu_result = get_alu_result(id_ex.alu_opcode, alu_src1, alu_src2);
-
+        next_ex_mem.alu_result = get_alu_result(id_ex.alu_opcode, alu_src1, alu_src2);
         // Pass-through signals
-        ex_mem.valid         = 1;
-        ex_mem.pc            = id_ex.pc;
-        ex_mem.instr         = id_ex.instr;
-        ex_mem.rd            = id_ex.rd;
-        ex_mem.reg_write     = id_ex.reg_write;
-        ex_mem.mem_read      = id_ex.mem_read;
-        ex_mem.mem_write     = id_ex.mem_write;
-        ex_mem.rs2_val       = id_ex.rs2_val;
-        ex_mem.jump          = id_ex.jump;
-        ex_mem.branch_taken  = id_ex.branch_taken;
-        ex_mem.branch_target = id_ex.branch_target;
+        next_ex_mem.valid         = 1;
+        next_ex_mem.pc            = id_ex.pc;
+        next_ex_mem.instr         = id_ex.instr;
+        next_ex_mem.rd            = id_ex.rd;
+        next_ex_mem.reg_write     = id_ex.reg_write;
+        next_ex_mem.mem_read      = id_ex.mem_read;
+        next_ex_mem.mem_write     = id_ex.mem_write;
+        next_ex_mem.rs2_val       = id_ex.rs2_val;
+        next_ex_mem.jump          = id_ex.jump;
+        next_ex_mem.branch_taken  = id_ex.branch_taken;
+        next_ex_mem.branch_target = id_ex.branch_target;
 
         // Handle branches
-        if (id_ex.jump || (id_ex.branch_taken && ex_mem.alu_result)) begin
+        if (id_ex.jump || (id_ex.branch_taken && next_ex_mem.alu_result)) begin
             next_pc = id_ex.branch_target;
             flush = 1;
         end
@@ -263,15 +288,15 @@ class RISCV_ref_model extends uvm_component;
             return;
         end
         
-        mem_wb.mem_data = rm_trans.data_rd;
+        next_mem_wb.mem_data = rm_trans.data_rd;
         
         // Pass through signals
-        mem_wb.valid = 1;
-        mem_wb.pc = ex_mem.pc;
-        mem_wb.instr = ex_mem.instr;
-        mem_wb.rd = ex_mem.rd;
-        mem_wb.reg_write = ex_mem.reg_write;
-        mem_wb.alu_result = ex_mem.alu_result;
+        next_mem_wb.valid = 1;
+        next_mem_wb.pc = ex_mem.pc;
+        next_mem_wb.instr = ex_mem.instr;
+        next_mem_wb.rd = ex_mem.rd;
+        next_mem_wb.reg_write = ex_mem.reg_write;
+        next_mem_wb.alu_result = ex_mem.alu_result;
 
         // Update expected transaction
         exp_trans.data_wr = ex_mem.rs2_val;         

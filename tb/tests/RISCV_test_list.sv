@@ -28,12 +28,23 @@ package RISCV_test_list;
   `include "RISCV_addi_test.sv" 
   `include "RISCV_and_test.sv"
   `include "RISCV_sub_test.sv" 
+  `include "RISCV_or_test.sv" 
   `include "RISCV_ori_test.sv" 
+  `include "RISCV_xor_test.sv"
+  `include "RISCV_xori_test.sv"
   `include "RISCV_beq_test.sv" 
   `include "RISCV_jal_test.sv" 
   `include "RISCV_andi_test.sv" 
   `include "RISCV_lui_test.sv" 
   `include "RISCV_load_store_test.sv"
+  `include "RISCV_auipc_test.sv"
+  `include "RISCV_slti_test.sv"
+  `include "RISCV_sll_test.sv"
+  `include "RISCV_srl_test.sv"
+  `include "RISCV_srli_test.sv"
+  `include "RISCV_sltiu_test.sv"
+  `include "RISCV_load_R_store_test.sv"
+  `include "RISCV_load_i_store_test.sv"
 
 endpackage 
 
