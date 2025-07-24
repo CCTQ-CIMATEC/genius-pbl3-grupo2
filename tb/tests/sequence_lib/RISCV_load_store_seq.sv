@@ -30,6 +30,8 @@ rand bit [4:0] rs1_stores[NUM_STORES];
 rand bit [4:0] rs2_stores[NUM_STORES];
 rand bit [11:0] imm_stores[NUM_STORES];
 
+bit [2:0] funct3;
+
 // Constantes fixas
 localparam bit [6:0] LOAD_OPCODE  = 7'b0000011;
 localparam bit [2:0] LW_FUNCT3    = 3'b010;
@@ -68,7 +70,7 @@ localparam bit [2:0] SW_FUNCT3    = 3'b010;
       req.instr_data[i] = {
         imm_loads[i],        // [31:20] immediate
         rs1_loads[i],        // [19:15] base register
-        LW_FUNCT3,           // [14:12] funct3
+        funct3,           // [14:12] funct3
         rd_loads[i],         // [11:7] destination register
         LOAD_OPCODE          // [6:0] opcode
       };

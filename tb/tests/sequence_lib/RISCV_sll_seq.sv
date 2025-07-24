@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// SLL sequence for RISCV
+// SLL sequence for RISC-V
 //------------------------------------------------------------------------------
 // This sequence generates randomized transactions for the RISCV UVM verification.
 //

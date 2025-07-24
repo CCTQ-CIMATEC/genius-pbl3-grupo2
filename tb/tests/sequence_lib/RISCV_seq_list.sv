@@ -42,6 +42,9 @@ package RISCV_seq_list;
   `include "RISCV_sll_seq.sv"
   `include "RISCV_srl_seq.sv"
   `include "RISCV_srli_seq.sv"  
+  `include "RISCV_sltiu_seq.sv"
+  `include "RISCV_load_R_store_seq.sv"
+  `include "RISCV_load_i_store_seq.sv"
 
 endpackage
 

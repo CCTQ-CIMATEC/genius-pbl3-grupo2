@@ -22,6 +22,8 @@ class RISCV_transaction extends uvm_sequence_item;
        bit [`P_DMEM_ADDR_WIDTH-1:0] data_addr;
        bit                          data_wr_en_ma;
 
+       bit inBurst;
+
   // Instruction type name, useful for debugging and logging
   string instr_name;
 
@@ -32,6 +34,7 @@ class RISCV_transaction extends uvm_sequence_item;
     `uvm_field_int(data_wr,           UVM_ALL_ON)
     `uvm_field_int(data_addr,         UVM_ALL_ON)
     `uvm_field_int(data_wr_en_ma,     UVM_ALL_ON)
+    `uvm_field_int(inBurst,           UVM_ALL_ON)
     `uvm_field_string(instr_name,     UVM_ALL_ON)
   `uvm_object_utils_end
 
