@@ -101,8 +101,12 @@ class RISCV_ref_model extends uvm_component;
                 end
                 
                 // Depois executa o fetch para a próxima instrução
-                fetch();
-                
+                if(i == 0) begin
+                    fetch(rm_trans.instr_data);
+                    exp_trans.instr_data = rm_trans.instr_data;
+                end else begin 
+                    fetch(32'h0); // Fetch a NOP if not the first iteration
+                end
                 i++;
             end while (i <= reps);
             
@@ -110,11 +114,11 @@ class RISCV_ref_model extends uvm_component;
         end
     endtask
 
-    task fetch();
+    task fetch(bit [31:0] instr);
         if (!stall) begin
             next_if_id.valid = 1;
             next_if_id.pc = pc;
-            next_if_id.instr = rm_trans.instr_data;
+            next_if_id.instr = instr;
             
             // Default next PC is PC+4 unless overridden
             next_pc = pc + 4;
@@ -128,7 +132,6 @@ class RISCV_ref_model extends uvm_component;
         end
 
         exp_trans.inst_addr = next_if_id.pc;
-        exp_trans.instr_data = rm_trans.instr_data;
     endtask
 
     task decode();
