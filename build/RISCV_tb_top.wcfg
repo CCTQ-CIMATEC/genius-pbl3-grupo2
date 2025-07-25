@@ -47,10 +47,6 @@
       <obj_property name="ElementShortName">P_REG_ADDR_WIDTH[31:0]</obj_property>
       <obj_property name="ObjectShortName">P_REG_ADDR_WIDTH[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/RISCV_tb_top/P_IMEM_ADDR_WIDTH">
-      <obj_property name="ElementShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
-      <obj_property name="ObjectShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/RISCV_tb_top/P_DMEM_ADDR_WIDTH">
       <obj_property name="ElementShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>
       <obj_property name="ObjectShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>
@@ -91,10 +87,6 @@
       <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/P_DATA_WIDTH">
          <obj_property name="ElementShortName">P_DATA_WIDTH[31:0]</obj_property>
          <obj_property name="ObjectShortName">P_DATA_WIDTH[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/P_IMEM_ADDR_WIDTH">
-         <obj_property name="ElementShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
-         <obj_property name="ObjectShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/RISCV_tb_top/RISCV_intf/P_DMEM_ADDR_WIDTH">
          <obj_property name="ElementShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>
@@ -401,10 +393,6 @@
    <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/P_REG_ADDR_WIDTH">
       <obj_property name="ElementShortName">P_REG_ADDR_WIDTH[31:0]</obj_property>
       <obj_property name="ObjectShortName">P_REG_ADDR_WIDTH[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/P_IMEM_ADDR_WIDTH">
-      <obj_property name="ElementShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
-      <obj_property name="ObjectShortName">P_IMEM_ADDR_WIDTH[31:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/RISCV_tb_top/u_riscv_core/P_DMEM_ADDR_WIDTH">
       <obj_property name="ElementShortName">P_DMEM_ADDR_WIDTH[31:0]</obj_property>

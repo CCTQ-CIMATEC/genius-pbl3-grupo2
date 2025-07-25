@@ -4,8 +4,7 @@
 interface RISCV_interface
 #(
     parameter P_DATA_WIDTH = 32,
-    parameter P_IMEM_ADDR_WIDTH = 9,
-    parameter P_DMEM_ADDR_WIDTH = 8
+    parameter P_DMEM_ADDR_WIDTH = 11
 )
 (input logic clk, reset);
 
@@ -15,7 +14,7 @@ interface RISCV_interface
 
   // Instruction memory interface (to DUT)
   logic [P_DATA_WIDTH-1:0] instr_data;
-  logic [P_IMEM_ADDR_WIDTH-1:0] inst_addr;
+  logic [P_DMEM_ADDR_WIDTH-1:0] inst_addr;
 
   // Data memory interface (to DUT)
   logic [P_DATA_WIDTH-1:0] data_rd;
