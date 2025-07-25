@@ -21,11 +21,11 @@ import RISCV_test_list::*;
 /*
  * Local signal declarations and parameter definitions
  */
+
  parameter P_DATA_WIDTH = 32;
- parameter P_ADDR_WIDTH = 10;
- parameter P_REG_ADDR_WIDTH = 5;
- parameter P_IMEM_ADDR_WIDTH = 9;
- parameter P_DMEM_ADDR_WIDTH = 8;
+    parameter P_ADDR_WIDTH = 11;
+    parameter P_REG_ADDR_WIDTH = 5;
+    parameter P_DMEM_ADDR_WIDTH = 11;
  
  parameter cycle = 10;
  bit clk;
@@ -56,7 +56,6 @@ import RISCV_test_list::*;
   */
  RISCV_interface #(
         .P_DATA_WIDTH(P_DATA_WIDTH),
-        .P_IMEM_ADDR_WIDTH(P_IMEM_ADDR_WIDTH),
         .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
  ) RISCV_intf(clk, reset);
  

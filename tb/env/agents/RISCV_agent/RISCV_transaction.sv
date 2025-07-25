@@ -17,7 +17,7 @@ class RISCV_transaction extends uvm_sequence_item;
   rand bit [`P_DATA_WIDTH-1:0]      data_rd;
 
   // Expected output signals from the CPU (used by monitor or scoreboard)
-       bit [`P_IMEM_ADDR_WIDTH-1:0] inst_addr;
+       bit [`P_DMEM_ADDR_WIDTH-1:0] inst_addr;
        bit [`P_DATA_WIDTH-1:0]      data_wr;
        bit [`P_DMEM_ADDR_WIDTH-1:0] data_addr;
        bit                          data_wr_en_ma;
