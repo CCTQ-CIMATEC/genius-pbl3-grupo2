@@ -10,9 +10,9 @@
 `ifndef RISCV_LOAD_R_STORE_SEQ
 `define RISCV_LOAD_R_STORE_SEQ
 
-class RISCV_load_R_store_seq extends uvm_sequence#(RISCV_transaction_block);
+class RISCV_load_r_store_seq extends uvm_sequence#(RISCV_transaction_block);
 
-  `uvm_object_utils(RISCV_load_R_store_seq)
+  `uvm_object_utils(RISCV_load_r_store_seq)
 
   localparam int NUM_LOADS  = 32;
   localparam int NUM_RTYPE  = 32;
@@ -52,7 +52,7 @@ class RISCV_load_R_store_seq extends uvm_sequence#(RISCV_transaction_block);
   bit [2:0] funct3_map[4] = '{3'b000, 3'b000, 3'b111, 3'b110};
   bit [6:0] funct7_map[4] = '{7'b0000000, 7'b0100000, 7'b0000000, 7'b0000000};
 
-  function new(string name = "RISCV_load_R_store_seq");
+  function new(string name = "RISCV_load_r_store_seq");
     super.new(name);
   endfunction
 

@@ -11,14 +11,14 @@
 `ifndef RISCV_LOAD_R_STORE_TEST
 `define RISCV_LOAD_R_STORE_TEST
 
-class RISCV_load_R_store_test extends uvm_test;
+class RISCV_load_r_store_test extends uvm_test;
 
-  `uvm_component_utils(RISCV_load_R_store_test)
+  `uvm_component_utils(RISCV_load_r_store_test)
 
   RISCV_environment         env;
-  RISCV_load_R_store_seq   seq;
+  RISCV_load_r_store_seq   seq;
 
-  function new(string name = "RISCV_load_R_store_test", uvm_component parent = null);
+  function new(string name = "RISCV_load_r_store_test", uvm_component parent = null);
     super.new(name, parent);
   endfunction
 
@@ -31,14 +31,14 @@ class RISCV_load_R_store_test extends uvm_test;
     set_type_override_by_type(RISCV_driver::get_type(), RISCV_block_driver::get_type());
     set_type_override_by_type(RISCV_monitor::get_type(), RISCV_block_monitor::get_type());
 
-    seq = RISCV_load_R_store_seq::type_id::create("seq");
+    seq = RISCV_load_r_store_seq::type_id::create("seq");
   endfunction
 
   task run_phase(uvm_phase phase);
     phase.raise_objection(this);
-    `uvm_info(get_type_name(), "Starting RISCV_load_R_store_seq...", UVM_MEDIUM)
+    `uvm_info(get_type_name(), "Starting RISCV_load_r_store_seq...", UVM_MEDIUM)
     seq.start(env.RISCV_agnt.sequencer);
-    `uvm_info(get_type_name(), "Completed RISCV_load_R_store_seq.", UVM_MEDIUM)
+    `uvm_info(get_type_name(), "Completed RISCV_load_r_store_seq.", UVM_MEDIUM)
     phase.drop_objection(this);
   endtask
 
