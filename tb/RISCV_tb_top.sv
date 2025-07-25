@@ -68,7 +68,6 @@ import RISCV_test_list::*;
        .P_DATA_WIDTH(P_DATA_WIDTH),
        .P_ADDR_WIDTH(P_ADDR_WIDTH),
        .P_REG_ADDR_WIDTH(P_REG_ADDR_WIDTH),
-       .P_IMEM_ADDR_WIDTH(P_IMEM_ADDR_WIDTH),
        .P_DMEM_ADDR_WIDTH(P_DMEM_ADDR_WIDTH)
    ) u_riscv_core (
        .i_clk          (clk),
