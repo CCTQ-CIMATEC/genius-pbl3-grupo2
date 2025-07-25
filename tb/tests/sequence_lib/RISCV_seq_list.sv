@@ -43,8 +43,14 @@ package RISCV_seq_list;
   `include "RISCV_srl_seq.sv"
   `include "RISCV_srli_seq.sv"  
   `include "RISCV_sltiu_seq.sv"
-  `include "RISCV_load_R_store_seq.sv"
+  `include "RISCV_load_r_store_seq.sv"
   `include "RISCV_load_i_store_seq.sv"
+  `include "RISCV_slli_seq.sv"
+  `include "RISCV_sltu_seq.sv"
+  `include "RISCV_slt_seq.sv"
+  `include "RISCV_sra_seq.sv"
+  `include "RISCV_srai_seq.sv"
+  `include "RISCV_jalr_seq.sv"
 
 endpackage
 

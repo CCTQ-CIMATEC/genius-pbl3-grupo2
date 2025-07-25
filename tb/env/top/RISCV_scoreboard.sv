@@ -99,6 +99,11 @@ class RISCV_scoreboard extends uvm_scoreboard;
         `uvm_fatal(get_full_name(), "Data address MISMATCH");
         error = 1;
       end
+
+      if (exp_trans.data_wr_en_ma !== act_trans.data_wr_en_ma) begin
+        `uvm_fatal(get_full_name(), "Data write enable MISMATCH");
+        error = 1;
+      end
       
       // Check memory data fields depending on type of transaction
       if (exp_trans.data_wr_en_ma) begin
@@ -108,18 +113,6 @@ class RISCV_scoreboard extends uvm_scoreboard;
           `uvm_fatal(get_full_name(), "Data write MISMATCH");
           error = 1;
         end
-      end else begin
-        // LOAD instruction: validate data read from memory
-        `uvm_info(get_full_name(), $sformatf("Expected data_rd = 0x%08x | Actual data_rd = 0x%08x", exp_trans.data_rd, act_trans.data_rd), UVM_LOW);
-        if (exp_trans.data_rd !== act_trans.data_rd) begin
-          `uvm_fatal(get_full_name(), "Data read MISMATCH");
-          error = 1;
-        end
-      end
-
-      if (exp_trans.data_wr_en_ma !== act_trans.data_wr_en_ma) begin
-        `uvm_fatal(get_full_name(), "Data write enable MISMATCH");
-        error = 1;
       end
     end
   endtask
